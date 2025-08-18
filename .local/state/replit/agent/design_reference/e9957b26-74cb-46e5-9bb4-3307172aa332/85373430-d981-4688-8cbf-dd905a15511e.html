@@ -1,0 +1,503 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarify.id - Trusted News Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'off-white': '#F8F9FA',
+                        'charcoal': '#2D3748',
+                        'trust-blue': '#3182CE',
+                        'success-green': '#38A169',
+                        'muted-gray': '#E2E8F0',
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-off-white font-inter">
+    <!-- @COMPONENT: Header -->
+    <header class="bg-white shadow-sm border-b border-muted-gray sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-shield-check text-trust-blue text-2xl mr-3"></i>
+                        <h1 class="text-2xl font-bold text-charcoal">Clarify.id</h1>
+                    </div>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" placeholder="Search verified news..." class="block w-full pl-10 pr-3 py-2 border border-muted-gray rounded-lg focus:ring-2 focus:ring-trust-blue focus:border-trust-blue" data-implementation="Should implement real-time search across news content">
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center space-x-4">
+                    <button class="text-charcoal hover:text-trust-blue transition-colors" data-implementation="Should toggle notifications">
+                        <i class="fas fa-bell text-lg"></i>
+                    </button>
+                    <button class="text-charcoal hover:text-trust-blue transition-colors" data-implementation="Should toggle settings panel">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- @COMPONENT: MainLayout -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- @COMPONENT: NavigationSidebar -->
+            <aside class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm border border-muted-gray p-6 sticky top-24">
+                    <h2 class="text-lg font-semibold text-charcoal mb-4">Categories</h2>
+                    
+                    <!-- @STATE: selectedCategory:string = 'all' -->
+                    <nav class="space-y-2">
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-white bg-trust-blue rounded-md transition-colors" data-category="all" data-event="click:handleCategorySelect">
+                            <i class="fas fa-globe mr-3"></i>
+                            All News
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-md transition-colors" data-category="technology" data-event="click:handleCategorySelect">
+                            <i class="fas fa-microchip mr-3"></i>
+                            Technology
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-md transition-colors" data-category="politics" data-event="click:handleCategorySelect">
+                            <i class="fas fa-landmark mr-3"></i>
+                            Politics
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-md transition-colors" data-category="business" data-event="click:handleCategorySelect">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Business
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-md transition-colors" data-category="science" data-event="click:handleCategorySelect">
+                            <i class="fas fa-flask mr-3"></i>
+                            Science
+                        </a>
+                    </nav>
+                    
+                    <div class="mt-6 pt-6 border-t border-muted-gray">
+                        <h3 class="text-sm font-medium text-charcoal mb-3">Quick Stats</h3>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex justify-between">
+                                <span>Sources Verified:</span>
+                                <span class="font-medium text-success-green" data-bind="stats.verifiedSources">24</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Stories Today:</span>
+                                <span class="font-medium text-charcoal" data-bind="stats.todayStories">156</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Last Update:</span>
+                                <span class="font-medium text-trust-blue" data-bind="stats.lastUpdate">2 min ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            <!-- @END_COMPONENT: NavigationSidebar -->
+
+            <!-- @COMPONENT: MainNewsFeed -->
+            <main class="lg:col-span-6">
+                <div class="bg-white rounded-lg shadow-sm border border-muted-gray">
+                    <!-- Feed Header -->
+                    <div class="p-6 border-b border-muted-gray">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-semibold text-charcoal">Latest News</h2>
+                            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                                <div class="w-2 h-2 bg-success-green rounded-full animate-pulse"></div>
+                                <span>Live updates</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">Verified news from trusted sources</p>
+                    </div>
+                    
+                    <!-- News Feed -->
+                    <div class="divide-y divide-muted-gray" data-implementation="Should implement infinite scroll and real-time updates">
+                        
+                        <!-- @MAP: newsArticles.map(article => ( -->
+                        <!-- News Card 1 -->
+                        <article class="p-6 hover:bg-gray-50 transition-colors cursor-pointer" data-mock="true">
+                            <div class="flex items-start space-x-4">
+                                <!-- A futuristic AI robot working alongside humans in a modern office -->
+                                <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="AI technology in office" class="w-20 h-16 object-cover rounded-lg flex-shrink-0">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-green text-white">
+                                            <i class="fas fa-check-circle text-xs mr-1"></i>
+                                            Verified Source
+                                        </span>
+                                        <span class="text-xs text-gray-500" data-bind="article.category">Technology</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-charcoal leading-6 mb-2 hover:text-trust-blue transition-colors">
+                                        <a href="#" data-bind="article.url" data-implementation="Should open original article in new tab">
+                                            OpenAI Announces GPT-5 with Revolutionary Reasoning Capabilities
+                                        </a>
+                                    </h3>
+                                    
+                                    <p class="text-sm text-gray-600 mb-3 line-clamp-2" data-bind="article.description" data-mock="true">
+                                        The latest iteration of GPT promises significant improvements in logical reasoning and problem-solving, marking a major leap forward in artificial intelligence development.
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between text-xs text-gray-500">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-newspaper text-trust-blue mr-1"></i>
+                                                <span data-bind="article.source">Reuters</span>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="far fa-clock mr-1"></i>
+                                                <span data-bind="article.publishedAt">2 hours ago</span>
+                                            </span>
+                                        </div>
+                                        <button class="text-trust-blue hover:text-blue-700 transition-colors" data-implementation="Should save article for later">
+                                            <i class="far fa-bookmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- News Card 2 -->
+                        <article class="p-6 hover:bg-gray-50 transition-colors cursor-pointer" data-mock="true">
+                            <div class="flex items-start space-x-4">
+                                <!-- Modern parliament building with political figures in session -->
+                                <img src="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Political session" class="w-20 h-16 object-cover rounded-lg flex-shrink-0">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-green text-white">
+                                            <i class="fas fa-check-circle text-xs mr-1"></i>
+                                            Verified Source
+                                        </span>
+                                        <span class="text-xs text-gray-500" data-bind="article.category">Politics</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-charcoal leading-6 mb-2 hover:text-trust-blue transition-colors">
+                                        <a href="#" data-bind="article.url" data-implementation="Should open original article in new tab">
+                                            Senate Passes Bipartisan AI Regulation Framework
+                                        </a>
+                                    </h3>
+                                    
+                                    <p class="text-sm text-gray-600 mb-3 line-clamp-2" data-bind="article.description" data-mock="true">
+                                        New legislation establishes comprehensive guidelines for AI development and deployment, addressing safety concerns while promoting innovation in the tech sector.
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between text-xs text-gray-500">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-newspaper text-trust-blue mr-1"></i>
+                                                <span data-bind="article.source">Associated Press</span>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="far fa-clock mr-1"></i>
+                                                <span data-bind="article.publishedAt">4 hours ago</span>
+                                            </span>
+                                        </div>
+                                        <button class="text-trust-blue hover:text-blue-700 transition-colors" data-implementation="Should save article for later">
+                                            <i class="far fa-bookmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- News Card 3 -->
+                        <article class="p-6 hover:bg-gray-50 transition-colors cursor-pointer" data-mock="true">
+                            <div class="flex items-start space-x-4">
+                                <!-- Modern stock exchange trading floor with digital displays -->
+                                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Stock market trading floor" class="w-20 h-16 object-cover rounded-lg flex-shrink-0">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-green text-white">
+                                            <i class="fas fa-check-circle text-xs mr-1"></i>
+                                            Verified Source
+                                        </span>
+                                        <span class="text-xs text-gray-500" data-bind="article.category">Business</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-charcoal leading-6 mb-2 hover:text-trust-blue transition-colors">
+                                        <a href="#" data-bind="article.url" data-implementation="Should open original article in new tab">
+                                            Tech Stocks Surge Following AI Infrastructure Announcements
+                                        </a>
+                                    </h3>
+                                    
+                                    <p class="text-sm text-gray-600 mb-3 line-clamp-2" data-bind="article.description" data-mock="true">
+                                        Major technology companies see significant market gains after announcing expanded AI infrastructure investments, with NVIDIA leading the charge.
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between text-xs text-gray-500">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-newspaper text-trust-blue mr-1"></i>
+                                                <span data-bind="article.source">Bloomberg</span>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="far fa-clock mr-1"></i>
+                                                <span data-bind="article.publishedAt">6 hours ago</span>
+                                            </span>
+                                        </div>
+                                        <button class="text-trust-blue hover:text-blue-700 transition-colors" data-implementation="Should save article for later">
+                                            <i class="far fa-bookmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- News Card 4 -->
+                        <article class="p-6 hover:bg-gray-50 transition-colors cursor-pointer" data-mock="true">
+                            <div class="flex items-start space-x-4">
+                                <!-- Modern laboratory with scientists working on advanced research -->
+                                <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Scientific research laboratory" class="w-20 h-16 object-cover rounded-lg flex-shrink-0">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-green text-white">
+                                            <i class="fas fa-check-circle text-xs mr-1"></i>
+                                            Verified Source
+                                        </span>
+                                        <span class="text-xs text-gray-500" data-bind="article.category">Science</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-charcoal leading-6 mb-2 hover:text-trust-blue transition-colors">
+                                        <a href="#" data-bind="article.url" data-implementation="Should open original article in new tab">
+                                            Breakthrough in Quantum Computing Brings Practical Applications Closer
+                                        </a>
+                                    </h3>
+                                    
+                                    <p class="text-sm text-gray-600 mb-3 line-clamp-2" data-bind="article.description" data-mock="true">
+                                        Researchers achieve significant error reduction in quantum systems, potentially accelerating the timeline for commercial quantum computing applications.
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between text-xs text-gray-500">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-newspaper text-trust-blue mr-1"></i>
+                                                <span data-bind="article.source">Nature</span>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="far fa-clock mr-1"></i>
+                                                <span data-bind="article.publishedAt">8 hours ago</span>
+                                            </span>
+                                        </div>
+                                        <button class="text-trust-blue hover:text-blue-700 transition-colors" data-implementation="Should save article for later">
+                                            <i class="far fa-bookmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        <!-- @END_MAP )) -->
+                        
+                    </div>
+                    
+                    <!-- Load More -->
+                    <div class="p-6 border-t border-muted-gray">
+                        <button class="w-full py-2 px-4 border border-trust-blue text-trust-blue rounded-lg hover:bg-trust-blue hover:text-white transition-colors" data-implementation="Should load more articles via pagination">
+                            Load More Articles
+                        </button>
+                    </div>
+                </div>
+            </main>
+            <!-- @END_COMPONENT: MainNewsFeed -->
+
+            <!-- @COMPONENT: RelatedStoriesSidebar -->
+            <aside class="lg:col-span-3">
+                <div class="space-y-6">
+                    
+                    <!-- Trending Stories -->
+                    <div class="bg-white rounded-lg shadow-sm border border-muted-gray p-6">
+                        <h3 class="text-lg font-semibold text-charcoal mb-4 flex items-center">
+                            <i class="fas fa-fire text-orange-500 mr-2"></i>
+                            Trending Stories
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <!-- @MAP: trendingStories.map(story => ( -->
+                            <div class="flex items-start space-x-3" data-mock="true">
+                                <div class="flex-shrink-0 w-2 h-2 bg-trust-blue rounded-full mt-2"></div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-sm font-medium text-charcoal leading-5 hover:text-trust-blue cursor-pointer transition-colors">
+                                        <a href="#" data-bind="story.url" data-implementation="Should link to story">Meta Unveils Advanced VR Technology</a>
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <span data-bind="story.source">TechCrunch</span> • 
+                                        <span data-bind="story.publishedAt">1 hour ago</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3" data-mock="true">
+                                <div class="flex-shrink-0 w-2 h-2 bg-trust-blue rounded-full mt-2"></div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-sm font-medium text-charcoal leading-5 hover:text-trust-blue cursor-pointer transition-colors">
+                                        <a href="#" data-bind="story.url" data-implementation="Should link to story">Climate Summit Reaches Historic Agreement</a>
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <span data-bind="story.source">BBC News</span> • 
+                                        <span data-bind="story.publishedAt">3 hours ago</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3" data-mock="true">
+                                <div class="flex-shrink-0 w-2 h-2 bg-trust-blue rounded-full mt-2"></div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-sm font-medium text-charcoal leading-5 hover:text-trust-blue cursor-pointer transition-colors">
+                                        <a href="#" data-bind="story.url" data-implementation="Should link to story">New Cancer Treatment Shows Promise</a>
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <span data-bind="story.source">Reuters Health</span> • 
+                                        <span data-bind="story.publishedAt">5 hours ago</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+
+                    <!-- Sources Widget -->
+                    <div class="bg-white rounded-lg shadow-sm border border-muted-gray p-6">
+                        <h3 class="text-lg font-semibold text-charcoal mb-4 flex items-center">
+                            <i class="fas fa-shield-check text-success-green mr-2"></i>
+                            Verified Sources
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- @MAP: verifiedSources.map(source => ( -->
+                            <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg" data-mock="true">
+                                <div class="w-6 h-6 bg-trust-blue rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
+                                <span class="text-xs font-medium text-charcoal" data-bind="source.name">Reuters</span>
+                            </div>
+
+                            <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg" data-mock="true">
+                                <div class="w-6 h-6 bg-trust-blue rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
+                                <span class="text-xs font-medium text-charcoal" data-bind="source.name">AP News</span>
+                            </div>
+
+                            <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg" data-mock="true">
+                                <div class="w-6 h-6 bg-trust-blue rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
+                                <span class="text-xs font-medium text-charcoal" data-bind="source.name">BBC</span>
+                            </div>
+
+                            <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg" data-mock="true">
+                                <div class="w-6 h-6 bg-trust-blue rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
+                                <span class="text-xs font-medium text-charcoal" data-bind="source.name">NPR</span>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-3 text-center">
+                            All sources undergo rigorous verification
+                        </p>
+                    </div>
+
+                    <!-- Newsletter Signup -->
+                    <div class="bg-gradient-to-br from-trust-blue to-blue-600 rounded-lg p-6 text-white">
+                        <h3 class="text-lg font-semibold mb-2">Stay Informed</h3>
+                        <p class="text-sm opacity-90 mb-4">Get verified news delivered daily</p>
+                        
+                        <form class="space-y-3" data-implementation="Should handle newsletter subscription">
+                            <input type="email" placeholder="Enter your email" class="w-full px-3 py-2 rounded-lg text-charcoal border-0 focus:ring-2 focus:ring-white" required>
+                            <button type="submit" class="w-full bg-white text-trust-blue py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                                Subscribe
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </aside>
+            <!-- @END_COMPONENT: RelatedStoriesSidebar -->
+            
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MainLayout -->
+
+    <script>
+        (function() {
+            // TODO: Implement business logic, API calls, and state management
+            
+            // Category selection handler
+            function handleCategorySelect(event) {
+                event.preventDefault();
+                const category = event.target.closest('a').dataset.category;
+                
+                // Update active state
+                document.querySelectorAll('[data-category]').forEach(link => {
+                    link.classList.remove('text-white', 'bg-trust-blue');
+                    link.classList.add('text-gray-600', 'hover:text-charcoal', 'hover:bg-gray-50');
+                });
+                
+                event.target.closest('a').classList.remove('text-gray-600', 'hover:text-charcoal', 'hover:bg-gray-50');
+                event.target.closest('a').classList.add('text-white', 'bg-trust-blue');
+                
+                // TODO: Filter news by category
+                console.log('Selected category:', category);
+            }
+            
+            // Add event listeners
+            document.querySelectorAll('[data-category]').forEach(link => {
+                link.addEventListener('click', handleCategorySelect);
+            });
+            
+            // Search functionality
+            const searchInput = document.querySelector('input[type="text"]');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    // TODO: Implement search functionality
+                    console.log('Searching for:', e.target.value);
+                });
+            }
+            
+            // Newsletter form submission
+            const newsletterForm = document.querySelector('form');
+            if (newsletterForm) {
+                newsletterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // TODO: Handle newsletter subscription
+                    console.log('Newsletter subscription submitted');
+                });
+            }
+            
+            // Simulate live updates indicator
+            setInterval(() => {
+                const liveIndicator = document.querySelector('.animate-pulse');
+                if (liveIndicator) {
+                    liveIndicator.style.opacity = liveIndicator.style.opacity === '0.5' ? '1' : '0.5';
+                }
+            }, 2000);
+            
+        })();
+    </script>
+</body>
+</html>
