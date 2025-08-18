@@ -32,18 +32,93 @@ export class MemStorage implements IStorage {
   private initializeDefaultData() {
     // Initialize default categories
     const defaultCategories = [
-      { name: "All News", slug: "all", icon: "newspaper", color: "red", isActive: true },
-      { name: "Technology", slug: "technology", icon: "laptop-code", color: "blue", isActive: true },
+      { name: "Technologies", slug: "technologies", icon: "laptop-code", color: "blue", isActive: true },
       { name: "Politics", slug: "politics", icon: "university", color: "red", isActive: true },
+      { name: "National", slug: "national", icon: "flag", color: "blue", isActive: true },
+      { name: "International", slug: "international", icon: "globe", color: "green", isActive: true },
       { name: "Business", slug: "business", icon: "chart-line", color: "yellow", isActive: true },
+      { name: "Finance", slug: "finance", icon: "dollar-sign", color: "green", isActive: true },
+      { name: "Health Care", slug: "health-care", icon: "heart", color: "red", isActive: true },
       { name: "Science", slug: "science", icon: "flask", color: "purple", isActive: true },
-      { name: "Health", slug: "health", icon: "heartbeat", color: "green", isActive: true },
-      { name: "World", slug: "world", icon: "globe", color: "gray", isActive: true },
+      { name: "Jobs", slug: "jobs", icon: "briefcase", color: "blue", isActive: true },
+      { name: "Media", slug: "media", icon: "tv", color: "gray", isActive: true },
+      { name: "Administration", slug: "administration", icon: "building-2", color: "gray", isActive: true },
+      { name: "Defense", slug: "defense", icon: "shield", color: "red", isActive: true },
+      { name: "Energy", slug: "energy", icon: "zap", color: "yellow", isActive: true },
+      { name: "Latino", slug: "latino", icon: "users", color: "orange", isActive: true },
+      { name: "Kids", slug: "kids", icon: "baby", color: "pink", isActive: true },
+      { name: "Sports", slug: "sports", icon: "trophy", color: "blue", isActive: true },
+      { name: "Games", slug: "games", icon: "gamepad-2", color: "purple", isActive: true },
     ];
 
     defaultCategories.forEach(cat => {
       const id = randomUUID();
       this.categories.set(id, { ...cat, id });
+    });
+
+    // Add some sample articles
+    const sampleArticles = [
+      {
+        title: "Artificial Intelligence Committee announces revolutionary breakthrough in neural network architecture",
+        description: "Members of the House AI Research Committee will begin reviewing a comprehensive report Monday on the panel's investigation of breakthrough neural network architectures. The committee aims to investigate the Democratic adversaries, a crucial step in the House's fast-moving artificial intelligence inquiry.",
+        content: "AI Research Committee Chairman Dr. Sarah Mitchell had indicated in a letter to colleagues earlier this week that a report would be coming 'soon' from his committee but had not provided a specific timeframe.",
+        url: "https://example.com/ai-breakthrough",
+        imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop",
+        publishedAt: new Date("2024-12-18T08:34:00Z"),
+        source: "Tech Research",
+        author: "SARAH MARTINEZ, DAVID CHEN and ALEX RODRIGUEZ",
+        category: "technologies",
+        isVerified: true,
+        metadata: { priority: "high" as const }
+      },
+      {
+        title: "OpenAI announces breakthrough in artificial general intelligence research",
+        description: "Major advancements in AGI capabilities demonstrate significant progress in reasoning and problem-solving abilities across multiple domains.",
+        content: "The breakthrough represents a significant milestone in the development of artificial general intelligence systems.",
+        url: "https://example.com/openai-agi",
+        imageUrl: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&h=400&fit=crop",
+        publishedAt: new Date("2024-12-18T06:15:00Z"),
+        source: "AI Technology",
+        author: "Tech Reporter",
+        category: "technologies",
+        isVerified: true,
+        metadata: { priority: "medium" as const }
+      },
+      {
+        title: "Google DeepMind develops new algorithm for climate prediction",
+        description: "Revolutionary machine learning approach improves weather forecasting accuracy by 40% using advanced neural networks.",
+        content: "The new algorithm combines satellite data with advanced machine learning techniques to provide more accurate climate predictions.",
+        url: "https://example.com/deepmind-climate",
+        imageUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=400&fit=crop",
+        publishedAt: new Date("2024-12-18T04:20:00Z"),
+        source: "Science Daily",
+        author: "Climate Research Team",
+        category: "technologies",
+        isVerified: true,
+        metadata: { priority: "medium" as const }
+      },
+      {
+        title: "Behind Trump's secret war-zone trip: A Mar-a-Lago escape, a twin Air Force One",
+        description: "Latest political developments and international relations update from Washington D.C.",
+        content: "Political analysis of recent developments in international relations and domestic policy.",
+        url: "https://example.com/politics-update",
+        imageUrl: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a08b?w=800&h=400&fit=crop",
+        publishedAt: new Date("2024-12-18T03:10:00Z"),
+        source: "Political News",
+        author: "Washington Correspondent",
+        category: "politics",
+        isVerified: true,
+        metadata: { priority: "medium" as const }
+      }
+    ];
+
+    sampleArticles.forEach(article => {
+      const id = randomUUID();
+      this.articles.set(id, {
+        ...article,
+        id,
+        createdAt: new Date()
+      });
     });
 
     // Initialize verified sources

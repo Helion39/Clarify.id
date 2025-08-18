@@ -1,98 +1,81 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { Shield, TrendingUp } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { newsApi } from "@/lib/news-api";
+import { Button } from "@/components/ui/button";
 
 export function TrendingSidebar() {
-  const { data: trendingArticles = [] } = useQuery({
-    queryKey: ['/api/news', { limit: 6 }],
-    queryFn: () => newsApi.getNews({ limit: 6 }),
+  const { data: relatedArticles = [] } = useQuery({
+    queryKey: ['/api/news', { limit: 4, offset: 1 }],
+    queryFn: () => newsApi.getNews({ limit: 4, offset: 1 }),
   });
 
-  const { data: topArticles = [] } = useQuery({
-    queryKey: ['/api/news', { limit: 3, offset: 6 }],
-    queryFn: () => newsApi.getNews({ limit: 3, offset: 6 }),
-  });
+  const getCategoryBadgeColor = (category: string) => {
+    const colors = {
+      technologies: "bg-blue-600 text-white",
+      politics: "bg-red-600 text-white", 
+      business: "bg-yellow-600 text-white",
+      science: "bg-purple-600 text-white",
+      health: "bg-green-600 text-white",
+    };
+    return colors[category as keyof typeof colors] || "bg-gray-600 text-white";
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels = {
+      technologies: "AI TECHNOLOGY",
+      politics: "CONGRESS",
+      business: "MACHINE LEARNING", 
+      science: "ROBOTICS",
+      health: "WHITE HOUSE",
+    };
+    return labels[category as keyof typeof labels] || category.toUpperCase();
+  };
 
   return (
     <aside className="lg:col-span-1">
-      <div className="space-y-6">
-        {/* Trending Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-charcoal mb-4 flex items-center">
-            <TrendingUp className="mr-2 h-5 w-5" />
-            Trending Now
-          </h3>
-          <div className="space-y-4">
-            {trendingArticles.slice(0, 3).map((article, index) => (
-              <article key={article.id} className="border-b border-gray-100 pb-3 last:border-b-0">
-                <div className="flex space-x-3">
-                  {article.imageUrl && (
-                    <img 
-                      src={article.imageUrl} 
-                      alt={article.title}
-                      className="w-16 h-12 object-cover rounded"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-charcoal hover:text-trust-red cursor-pointer line-clamp-2">
-                      {article.title}
-                    </h4>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-xs text-gray-500">{article.source}</span>
-                      <span className="text-xs text-gray-500">
-                        {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}
-                      </span>
-                      {article.isVerified && (
-                        <Badge className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5">
-                          <Shield className="mr-1 h-2 w-2" />
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
+      <div className="bg-white rounded-lg">
+        <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">Related <span className="font-normal">News</span></h3>
+          <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium p-0">
+            See all
+          </Button>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {relatedArticles.slice(0, 3).map((article) => (
+            <article key={article.id} className="group cursor-pointer">
+              {article.imageUrl && (
+                <div className="relative mb-3">
+                  <img 
+                    src={article.imageUrl} 
+                    alt={article.title}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <Badge className={`${getCategoryBadgeColor(article.category)} px-2 py-1 text-xs font-medium uppercase tracking-wide`}>
+                      {getCategoryLabel(article.category)}
+                    </Badge>
+                  </div>
+                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                    2.5m
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        {/* Most Read Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-charcoal mb-4">Most Read</h3>
-          <div className="space-y-3">
-            {topArticles.map((article, index) => (
-              <div key={article.id} className="flex items-start space-x-3">
-                <span className={`flex-shrink-0 w-6 h-6 rounded-full text-xs flex items-center justify-center font-semibold text-white ${
-                  index === 0 ? 'bg-trust-red' : 'bg-gray-400'
-                }`}>
-                  {index + 1}
-                </span>
-                <div>
-                  <h4 className="text-sm font-medium text-charcoal hover:text-trust-red cursor-pointer line-clamp-2">
-                    {article.title}
-                  </h4>
-                  <span className="text-xs text-gray-500">
-                    {article.source} • {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}
-                  </span>
+              )}
+              
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-3 group-hover:text-blue-600 transition-colors">
+                  {article.title}
+                </h4>
+                
+                <div className="flex items-center text-xs text-gray-500 mb-2">
+                  <CheckCircle className="h-3 w-3 text-green-500 mr-1 flex-shrink-0" />
+                  <span className="font-medium">Verified Source</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Trust Badge */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-verified-green rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield className="text-white h-6 w-6" />
-            </div>
-            <h3 className="text-sm font-semibold text-charcoal mb-2">100% Verified Sources</h3>
-            <p className="text-xs text-gray-600">
-              All news articles are sourced from our curated list of trusted, reputable news organizations.
-            </p>
-          </div>
+            </article>
+          ))}
         </div>
       </div>
     </aside>
