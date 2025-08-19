@@ -13,6 +13,7 @@ export interface PaginatedNewsResponse {
 export interface ExtendedSearchParams {
   query?: string;
   category?: string;
+  categories?: string;
   source?: string;
   limit?: number;
   offset?: number;
@@ -27,6 +28,7 @@ export const newsApi = {
     
     if (params.query) searchParams.append('query', params.query);
     if (params.category) searchParams.append('category', params.category);
+    if (params.categories) searchParams.append('categories', params.categories);
     if (params.source) searchParams.append('source', params.source);
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.offset) searchParams.append('offset', params.offset.toString());
@@ -42,6 +44,7 @@ export const newsApi = {
     
     if (params.query) searchParams.append('query', params.query);
     if (params.category) searchParams.append('category', params.category);
+    if (params.categories) searchParams.append('categories', params.categories);
     if (params.source) searchParams.append('source', params.source);
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.timeFilter) searchParams.append('timeFilter', params.timeFilter);

@@ -5,20 +5,152 @@ import { searchNewsSchema, insertNewsArticleSchema, type NewsArticle } from "@sh
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 
-// --- CACHING LAYER ---
-// In-memory cache to store API results for 5 minutes
-const cache = {
-  data: null as NewsArticle[] | null,
-  timestamp: 0,
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
-};
+// --- CATEGORY-BASED CACHING LAYER ---
+// Cache per category for better filtering
+const categoryCache = new Map<string, {
+  data: NewsArticle[],
+  timestamp: number,
+  isLoading: boolean
+}>();
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to get cache key
+function getCacheKey(category?: string): string {
+  return category?.toLowerCase() || 'general';
+}
+
+// Helper function to get or create cache entry
+function getCacheEntry(cacheKey: string) {
+  if (!categoryCache.has(cacheKey)) {
+    categoryCache.set(cacheKey, {
+      data: [],
+      timestamp: 0,
+      isLoading: false
+    });
+  }
+  return categoryCache.get(cacheKey)!;
+}
+
+// Enhanced normalize article function for different APIs
+function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'mediastack', categoryHint?: string): NewsArticle | null {
+  try {
+    // Skip articles with removed content or missing essential fields
+    if (!article.title || !article.url ||
+      article.title.includes('[Removed]') ||
+      article.title.toLowerCase().includes('removed')) {
+      return null;
+    }
+
+    // Clean and normalize source name
+    const cleanSourceName = (sourceName: string): string => {
+      return sourceName
+        .replace(/\s*(Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited)\s*/gi, '')
+        .replace(/\s*\(.*?\)\s*/g, '')
+        .trim();
+    };
+
+    // Determine category based on hint or content
+    let articleCategory = 'technologies';
+    if (categoryHint) {
+      articleCategory = categoryHint.toLowerCase();
+    } else {
+      // Try to infer category from title/content
+      const title = article.title?.toLowerCase() || '';
+      const description = article.description?.toLowerCase() || '';
+      const content = `${title} ${description}`;
+
+      if (content.includes('sport') || content.includes('football') || content.includes('basketball')) {
+        articleCategory = 'sport';
+      } else if (content.includes('entertainment') || content.includes('movie') || content.includes('celebrity')) {
+        articleCategory = 'entertainment';
+      } else if (content.includes('media') || content.includes('journalism') || content.includes('news')) {
+        articleCategory = 'media';
+      } else if (content.includes('business') || content.includes('economy') || content.includes('finance')) {
+        articleCategory = 'business';
+      }
+    }
+
+    const baseArticle = {
+      id: uuidv4(),
+      category: articleCategory,
+      isVerified: true,
+      createdAt: new Date(),
+    };
+
+    switch (apiSource) {
+      case 'newsapi':
+        return {
+          ...baseArticle,
+          title: article.title.trim(),
+          description: article.description?.trim() || '',
+          content: article.content?.trim() || article.description?.trim() || '',
+          url: article.url, // Keep original URL for external reference
+          imageUrl: article.urlToImage || null,
+          publishedAt: new Date(article.publishedAt),
+          source: cleanSourceName(article.source?.name || 'NewsAPI'),
+          author: article.author?.trim() || 'Unknown Author',
+          metadata: {
+            priority: 'medium' as const,
+            apiSource,
+            tags: [articleCategory, 'news'],
+            originalUrl: article.url
+          }
+        };
+
+      case 'gnews':
+        return {
+          ...baseArticle,
+          title: article.title.trim(),
+          description: article.description?.trim() || '',
+          content: article.content?.trim() || article.description?.trim() || '',
+          url: article.url, // Keep original URL for external reference
+          imageUrl: article.image || null,
+          publishedAt: new Date(article.publishedAt),
+          source: cleanSourceName(article.source?.name || 'GNews'),
+          author: article.source?.name ? `${article.source.name} Reporter` : 'GNews Reporter',
+          metadata: {
+            priority: 'medium' as const,
+            apiSource,
+            tags: [articleCategory, 'news'],
+            originalUrl: article.url
+          }
+        };
+
+      case 'mediastack':
+        return {
+          ...baseArticle,
+          title: article.title.trim(),
+          description: article.description?.trim() || '',
+          content: article.description?.trim() || '',
+          url: article.url, // Keep original URL for external reference
+          imageUrl: article.image || null,
+          publishedAt: new Date(article.published_at),
+          source: cleanSourceName(article.source || 'Mediastack'),
+          author: article.author?.trim() || 'Unknown Author',
+          metadata: {
+            priority: 'medium' as const,
+            apiSource,
+            tags: [articleCategory, 'news'],
+            originalUrl: article.url
+          }
+        };
+
+      default:
+        return null;
+    }
+  } catch (error) {
+    console.error(`Error normalizing article from ${apiSource}:`, error);
+    return null;
+  }
+}
 
 // --- TRUSTED SOURCES WHITELIST ---
 // Anti-hoax mission: Only articles from these vetted sources will be shown
 const TRUSTED_SOURCES = [
   // International Sources
   'Reuters',
-  'Associated Press', 
+  'Associated Press',
   'BBC News',
   'The Guardian',
   'The New York Times',
@@ -26,7 +158,7 @@ const TRUSTED_SOURCES = [
   'CNBC',
   // Indonesian Sources
   'CNN Indonesia',
-  'CNBC Indonesia', 
+  'CNBC Indonesia',
   'Detik News',
   'Detik',
   'Kompas.com',
@@ -37,162 +169,272 @@ const TRUSTED_SOURCES = [
   'Antara'
 ];
 
+// Background refresh function - fetches real API data and saves to MemStorage
+async function refreshNewsInBackground(category?: string) {
+  const cacheKey = getCacheKey(category);
+  const cacheEntry = getCacheEntry(cacheKey);
+
+  if (cacheEntry.isLoading) return; // Prevent multiple simultaneous fetches
+
+  cacheEntry.isLoading = true;
+  console.log(`🔄 Background refresh started for category: ${cacheKey}`);
+
+  try {
+    const newsApiKey = process.env.NEWSAPI_KEY || "";
+    const gnewsApiKey = process.env.GNEWS_API_KEY || "";
+    const mediastackApiKey = process.env.MEDIASTACK_API_KEY || "";
+
+    console.log('🔑 API Keys status:', {
+      newsApi: newsApiKey ? `✅ Present` : '❌ Missing',
+      gnews: gnewsApiKey ? `✅ Present` : '❌ Missing',
+      mediastack: mediastackApiKey ? `✅ Present` : '❌ Missing'
+    });
+
+    // Category-specific search queries
+    let searchQuery = 'technology OR artificial intelligence OR innovation';
+    let newsApiCategory = '';
+
+    if (category) {
+      switch (category.toLowerCase()) {
+        case 'technology':
+        case 'technologies':
+          searchQuery = 'technology OR artificial intelligence OR software OR innovation';
+          newsApiCategory = '&category=technology';
+          break;
+        case 'sport':
+        case 'sports':
+          searchQuery = 'sports OR football OR basketball OR soccer';
+          newsApiCategory = '&category=sports';
+          break;
+        case 'entertainment':
+        case 'entertainments':
+          searchQuery = 'entertainment OR movies OR music OR celebrity';
+          newsApiCategory = '&category=entertainment';
+          break;
+        case 'media':
+          searchQuery = 'media OR journalism OR news OR broadcasting';
+          break;
+        case 'business':
+          searchQuery = 'business OR economy OR finance OR startup';
+          newsApiCategory = '&category=business';
+          break;
+        default:
+          searchQuery = 'technology OR artificial intelligence OR innovation';
+      }
+    }
+
+    let fetchedArticles: any[] = [];
+
+    // Try NewsAPI first (most reliable)
+    if (newsApiKey) {
+      try {
+        const newsApiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&pageSize=30&sortBy=publishedAt&apiKey=${newsApiKey}`;
+        console.log(`📡 Calling NewsAPI: ${newsApiUrl.replace(newsApiKey, 'API_KEY')}`);
+
+        const response = await fetch(newsApiUrl);
+        console.log(`📡 NewsAPI Response: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          throw new Error(`NewsAPI HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`📡 NewsAPI Data:`, {
+          status: data.status,
+          totalResults: data.totalResults,
+          articlesCount: data.articles?.length || 0
+        });
+
+        if (data.status === 'ok' && data.articles && data.articles.length > 0) {
+          fetchedArticles.push(...data.articles.map((a: any) => ({ ...a, apiSource: 'newsapi' })));
+          console.log(`✅ NewsAPI: ${data.articles.length} articles fetched`);
+        } else {
+          console.log(`⚠️ NewsAPI: No articles returned. Status: ${data.status}, Message: ${data.message || 'N/A'}`);
+        }
+      } catch (error) {
+        console.error('❌ NewsAPI failed:', error);
+      }
+    }
+
+    // Try GNews if we need more articles
+    if (fetchedArticles.length < 20 && gnewsApiKey) {
+      try {
+        const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=30&apikey=${gnewsApiKey}`;
+        console.log(`📡 Calling GNews: ${gnewsUrl.replace(gnewsApiKey, 'API_KEY')}`);
+
+        const response = await fetch(gnewsUrl);
+        console.log(`📡 GNews Response: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          throw new Error(`GNews HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`📡 GNews Data:`, {
+          totalArticles: data.totalArticles,
+          articlesCount: data.articles?.length || 0
+        });
+
+        if (data.articles && data.articles.length > 0) {
+          fetchedArticles.push(...data.articles.map((a: any) => ({ ...a, apiSource: 'gnews' })));
+          console.log(`✅ GNews: ${data.articles.length} articles fetched`);
+        }
+      } catch (error) {
+        console.error('❌ GNews failed:', error);
+      }
+    }
+
+    // Try Mediastack if we still need more
+    if (fetchedArticles.length < 30 && mediastackApiKey) {
+      try {
+        const mediastackUrl = `http://api.mediastack.com/v1/news?access_key=${mediastackApiKey}&keywords=${encodeURIComponent(searchQuery)}&limit=30`;
+        console.log(`📡 Calling Mediastack: ${mediastackUrl.replace(mediastackApiKey, 'API_KEY')}`);
+
+        const response = await fetch(mediastackUrl);
+        console.log(`📡 Mediastack Response: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          throw new Error(`Mediastack HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`📡 Mediastack Data:`, {
+          pagination: data.pagination,
+          dataCount: data.data?.length || 0
+        });
+
+        if (data.data && data.data.length > 0) {
+          fetchedArticles.push(...data.data.map((a: any) => ({ ...a, apiSource: 'mediastack' })));
+          console.log(`✅ Mediastack: ${data.data.length} articles fetched`);
+        }
+      } catch (error) {
+        console.error('❌ Mediastack failed:', error);
+      }
+    }
+
+    console.log(`📊 Total raw articles fetched: ${fetchedArticles.length}`);
+
+    // Process and normalize articles
+    const processedArticles: NewsArticle[] = [];
+    const seenUrls = new Set<string>();
+
+    for (const rawArticle of fetchedArticles) {
+      try {
+        const normalized = normalizeArticle(rawArticle, rawArticle.apiSource, category);
+        if (normalized && normalized.url && !seenUrls.has(normalized.url)) {
+          // Apply whitelist filter
+          const isFromTrustedSource = TRUSTED_SOURCES.some(trustedSource =>
+            normalized.source && normalized.source.toLowerCase().includes(trustedSource.toLowerCase())
+          );
+
+          if (isFromTrustedSource) {
+            // Save to MemStorage
+            try {
+              const savedArticle = await storage.createNewsArticle({
+                title: normalized.title,
+                description: normalized.description,
+                content: normalized.content,
+                url: normalized.url,
+                imageUrl: normalized.imageUrl,
+                publishedAt: normalized.publishedAt,
+                source: normalized.source,
+                author: normalized.author,
+                category: normalized.category,
+                isVerified: normalized.isVerified,
+                metadata: normalized.metadata
+              });
+              processedArticles.push(savedArticle);
+              seenUrls.add(normalized.url);
+            } catch (storageError) {
+              // If storage fails (duplicate), still add to cache
+              processedArticles.push(normalized);
+              seenUrls.add(normalized.url);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error processing article:', error);
+      }
+    }
+
+    console.log(`✅ Processed ${processedArticles.length} verified articles for category: ${cacheKey}`);
+
+    // Update cache
+    cacheEntry.data = processedArticles;
+    cacheEntry.timestamp = Date.now();
+
+  } catch (error) {
+    console.error('❌ Background refresh failed:', error);
+  } finally {
+    cacheEntry.isLoading = false;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Get news articles - Enhanced with live API fetching, caching, and filtering
+
+  // Get news articles - Enhanced with real API data, category filtering, and caching
   app.get("/api/news", async (req, res) => {
     try {
       const category = req.query.category as string;
+      const categories = req.query.categories as string; // Support multiple categories
       const timeFilter = req.query.timeFilter as string;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = parseInt(req.query.limit as string) || 20;
       const paginated = req.query.paginated === 'true';
-      
-      // --- CHECK CACHE FIRST ---
+
+      console.log(`📥 Request: category=${category}, categories=${categories}, timeFilter=${timeFilter}`);
+
+      const cacheKey = getCacheKey(category);
+      const cacheEntry = getCacheEntry(cacheKey);
       const now = Date.now();
-      const cacheKey = category || 'general';
-      
-      if (cache.data && now - cache.timestamp < cache.CACHE_DURATION) {
-        console.log('Serving from cache...');
-        let articles = cache.data;
-        
-        // Apply client-side time filtering (as per your design)
-        if (timeFilter && timeFilter !== 'all') {
-          const filterDate = new Date();
-          switch (timeFilter) {
-            case 'daily':
-              filterDate.setHours(0, 0, 0, 0);
-              break;
-            case 'weekly':
-              filterDate.setDate(filterDate.getDate() - 7);
-              break;
-            case 'monthly':
-              filterDate.setMonth(filterDate.getMonth() - 1);
-              break;
-            case 'yearly':
-              filterDate.setFullYear(filterDate.getFullYear() - 1);
-              break;
-          }
-          articles = articles.filter(article => 
-            new Date(article.publishedAt) >= filterDate
-          );
-        }
-        
-        // Sort by published date (newest first)
-        articles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-        
-        if (paginated) {
-          const totalCount = articles.length;
-          const totalPages = Math.ceil(totalCount / limit);
-          const offset = (page - 1) * limit;
-          const paginatedArticles = articles.slice(offset, offset + limit);
-          
-          return res.json({
-            articles: paginatedArticles,
-            totalCount,
-            currentPage: page,
-            totalPages,
-            hasNextPage: page < totalPages,
-            hasPreviousPage: page > 1
-          });
-        } else {
-          return res.json(articles);
+
+      // Check if we need to refresh cache
+      const cacheExpired = now - cacheEntry.timestamp > CACHE_DURATION;
+      const hasNoData = cacheEntry.data.length === 0;
+
+      if ((cacheExpired || hasNoData) && !cacheEntry.isLoading) {
+        console.log(`🔄 Cache ${cacheExpired ? 'expired' : 'empty'} for ${cacheKey}, triggering refresh...`);
+        refreshNewsInBackground(category);
+      }
+
+      // Get articles from cache or MemStorage
+      let articles: NewsArticle[] = [];
+
+      if (cacheEntry.data.length > 0) {
+        console.log(`📦 Serving from cache: ${cacheEntry.data.length} articles for ${cacheKey}`);
+        articles = [...cacheEntry.data];
+      } else {
+        // Fallback to MemStorage
+        console.log(`💾 Fallback to MemStorage for ${cacheKey}`);
+        try {
+          const storageParams = category ? { category } : {};
+          articles = await storage.getNewsArticles(storageParams);
+          console.log(`💾 MemStorage returned: ${articles.length} articles`);
+        } catch (error) {
+          console.error('MemStorage failed:', error);
+          articles = [];
         }
       }
 
-      // --- FETCH FRESH DATA FROM APIs ---
-      console.log('Fetching fresh data from APIs...');
-      
-      const newsApiKey = process.env.NEWSAPI_KEY || process.env.NEWS_API_KEY || "";
-      const gnewsApiKey = process.env.GNEWS_API_KEY || "";
-      const mediastackApiKey = process.env.MEDIASTACK_API_KEY || "";
-
-      // Determine search query based on category
-      const searchQuery = category && category !== 'general' 
-        ? category 
-        : 'technology OR artificial intelligence OR innovation';
-      
-      const country = 'id'; // Indonesia
-
-      // Build API URLs
-      const newsApiUrl = newsApiKey 
-        ? `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&pageSize=30&sortBy=publishedAt&apiKey=${newsApiKey}`
-        : null;
-      
-      const gnewsApiUrl = gnewsApiKey 
-        ? `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&country=${country}&max=30&apikey=${gnewsApiKey}`
-        : null;
-      
-      const mediastackApiUrl = mediastackApiKey 
-        ? `http://api.mediastack.com/v1/news?access_key=${mediastackApiKey}&keywords=${encodeURIComponent(searchQuery)}&countries=${country}&limit=30`
-        : null;
-
-      // Fetch from all APIs in parallel
-      const apiPromises = [
-        newsApiUrl ? fetch(newsApiUrl).then(res => res.json()).catch(err => ({ error: err.message })) : Promise.resolve(null),
-        gnewsApiUrl ? fetch(gnewsApiUrl).then(res => res.json()).catch(err => ({ error: err.message })) : Promise.resolve(null),
-        mediastackApiUrl ? fetch(mediastackApiUrl).then(res => res.json()).catch(err => ({ error: err.message })) : Promise.resolve(null)
-      ];
-
-      const [newsApiRes, gnewsApiRes, mediastackApiRes] = await Promise.allSettled(apiPromises);
-
-      let allArticles: NewsArticle[] = [];
-
-      // Process NewsAPI results
-      if (newsApiRes.status === 'fulfilled' && newsApiRes.value && newsApiRes.value.articles && !newsApiRes.value.error) {
-        const normalized = newsApiRes.value.articles
-          .map((a: any) => normalizeArticle(a, 'newsapi'))
-          .filter(Boolean) as NewsArticle[];
-        allArticles.push(...normalized);
-        console.log(`NewsAPI: ${normalized.length} articles fetched`);
-      } else {
-        const error = newsApiRes.status === 'rejected' ? newsApiRes.reason : newsApiRes.value?.error;
-        console.error(`NewsAPI failed:`, error);
+      // Apply category filtering (support multiple categories)
+      if (categories) {
+        const categoryList = categories.split(',').map(c => c.trim().toLowerCase());
+        articles = articles.filter(article =>
+          categoryList.some(cat =>
+            article.category.toLowerCase() === cat ||
+            article.metadata?.tags?.some(tag => tag.toLowerCase().includes(cat))
+          )
+        );
+        console.log(`🏷️ Filtered to ${articles.length} articles for categories: ${categoryList.join(', ')}`);
+      } else if (category && category !== 'general') {
+        articles = articles.filter(article =>
+          article.category.toLowerCase() === category.toLowerCase() ||
+          article.metadata?.tags?.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+        );
+        console.log(`🏷️ Filtered to ${articles.length} articles for category: ${category}`);
       }
-
-      // Process GNews results  
-      if (gnewsApiRes.status === 'fulfilled' && gnewsApiRes.value && gnewsApiRes.value.articles && !gnewsApiRes.value.error) {
-        const normalized = gnewsApiRes.value.articles
-          .map((a: any) => normalizeArticle(a, 'gnews'))
-          .filter(Boolean) as NewsArticle[];
-        allArticles.push(...normalized);
-        console.log(`GNews: ${normalized.length} articles fetched`);
-      } else {
-        const error = gnewsApiRes.status === 'rejected' ? gnewsApiRes.reason : gnewsApiRes.value?.error;
-        console.error(`GNews failed:`, error);
-      }
-
-      // Process Mediastack results
-      if (mediastackApiRes.status === 'fulfilled' && mediastackApiRes.value && mediastackApiRes.value.data && !mediastackApiRes.value.error) {
-        const normalized = mediastackApiRes.value.data
-          .map((a: any) => normalizeArticle(a, 'mediastack'))
-          .filter(Boolean) as NewsArticle[];
-        allArticles.push(...normalized);
-        console.log(`Mediastack: ${normalized.length} articles fetched`);
-      } else {
-        const error = mediastackApiRes.status === 'rejected' ? mediastackApiRes.reason : mediastackApiRes.value?.error;
-        console.error(`Mediastack failed:`, error);
-      }
-
-      // De-duplicate articles based on URL
-      const uniqueArticles = [...new Map(allArticles.map(item => [item.url, item])).values()];
-      console.log(`Total unique articles before filtering: ${uniqueArticles.length}`);
-
-      // --- APPLY WHITELIST FILTER (Anti-hoax mission) ---
-      const verifiedArticles = uniqueArticles.filter(article => 
-        TRUSTED_SOURCES.some(trustedSource => 
-          article.source && article.source.toLowerCase().includes(trustedSource.toLowerCase())
-        )
-      );
-      
-      console.log(`Verified articles after whitelist filter: ${verifiedArticles.length}`);
-
-      // --- UPDATE CACHE ---
-      cache.data = verifiedArticles;
-      cache.timestamp = now;
 
       // Apply time filtering
-      let articles = verifiedArticles;
       if (timeFilter && timeFilter !== 'all') {
         const filterDate = new Date();
         switch (timeFilter) {
@@ -209,35 +451,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
             filterDate.setFullYear(filterDate.getFullYear() - 1);
             break;
         }
-        articles = articles.filter(article => 
+        articles = articles.filter(article =>
           new Date(article.publishedAt) >= filterDate
         );
+        console.log(`⏰ Time filtered to ${articles.length} articles for ${timeFilter}`);
       }
 
       // Sort by published date (newest first)
       articles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
+      // Apply pagination
       if (paginated) {
         const totalCount = articles.length;
         const totalPages = Math.ceil(totalCount / limit);
         const offset = (page - 1) * limit;
         const paginatedArticles = articles.slice(offset, offset + limit);
-        
+
+        console.log(`📄 Paginated: ${paginatedArticles.length}/${totalCount} articles (page ${page}/${totalPages})`);
+
         res.json({
           articles: paginatedArticles,
           totalCount,
           currentPage: page,
           totalPages,
           hasNextPage: page < totalPages,
-          hasPreviousPage: page > 1
+          hasPreviousPage: page > 1,
+          category: category || 'general',
+          isLoading: cacheEntry.isLoading
         });
       } else {
+        console.log(`📋 Returning ${articles.length} articles`);
         res.json(articles);
       }
 
     } catch (error) {
-      console.error("Error in /api/news:", error);
-      res.status(500).json({ message: "Failed to fetch news articles" });
+      console.error("❌ Error in /api/news:", error);
+      res.status(500).json({ message: "Failed to fetch news articles", error: error.message });
     }
   });
 
@@ -245,15 +494,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/news/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const article = await storage.getNewsArticleById(id);
-      
+      console.log(`🔍 Looking for article with ID: ${id}`);
+
+      // Try to get from MemStorage first
+      let article = await storage.getNewsArticleById(id);
+
       if (!article) {
-        return res.status(404).json({ message: "Article not found" });
+        // Fallback: search in all cache entries
+        console.log(`💾 Article not in MemStorage, searching cache...`);
+        for (const [cacheKey, cacheEntry] of categoryCache.entries()) {
+          const found = cacheEntry.data.find(a => a.id === id);
+          if (found) {
+            article = found;
+            console.log(`✅ Found article in ${cacheKey} cache`);
+            break;
+          }
+        }
       }
-      
+
+      if (!article) {
+        console.log(`❌ Article ${id} not found anywhere`);
+        return res.status(404).json({
+          message: "Article not found",
+          id: id,
+          suggestion: "The article may have been removed or the ID is incorrect"
+        });
+      }
+
+      console.log(`✅ Returning article: ${article.title}`);
       res.json(article);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch article" });
+      console.error(`❌ Error fetching article ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to fetch article", error: error.message });
     }
   });
 
@@ -292,116 +564,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced normalize article function for different APIs
-  function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'mediastack'): NewsArticle | null {
-    try {
-      // Skip articles with removed content or missing essential fields
-      if (!article.title || !article.url || 
-          article.title.includes('[Removed]') || 
-          article.title.toLowerCase().includes('removed')) {
-        return null;
-      }
 
-      // Clean and normalize source name
-      const cleanSourceName = (sourceName: string): string => {
-        return sourceName
-          .replace(/\s*(Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited)\s*/gi, '')
-          .replace(/\s*\(.*?\)\s*/g, '')
-          .trim();
-      };
-
-      const baseArticle = {
-        id: uuidv4(),
-        category: 'technologies',
-        isVerified: true,
-        createdAt: new Date(),
-      };
-
-      switch (apiSource) {
-        case 'newsapi':
-          return {
-            ...baseArticle,
-            title: article.title.trim(),
-            description: article.description?.trim() || '',
-            content: article.content?.trim() || article.description?.trim() || '',
-            url: article.url,
-            imageUrl: article.urlToImage || null,
-            publishedAt: new Date(article.publishedAt),
-            source: cleanSourceName(article.source?.name || 'NewsAPI'),
-            author: article.author?.trim() || 'Unknown Author',
-            metadata: { 
-              priority: 'medium' as const, 
-              apiSource,
-              tags: ['technology', 'news']
-            }
-          };
-
-        case 'gnews':
-          return {
-            ...baseArticle,
-            title: article.title.trim(),
-            description: article.description?.trim() || '',
-            content: article.content?.trim() || article.description?.trim() || '',
-            url: article.url,
-            imageUrl: article.image || null,
-            publishedAt: new Date(article.publishedAt),
-            source: cleanSourceName(article.source?.name || 'GNews'),
-            author: article.source?.name ? `${article.source.name} Reporter` : 'GNews Reporter',
-            metadata: { 
-              priority: 'medium' as const, 
-              apiSource,
-              tags: ['technology', 'news']
-            }
-          };
-
-        case 'mediastack':
-          return {
-            ...baseArticle,
-            title: article.title.trim(),
-            description: article.description?.trim() || '',
-            content: article.description?.trim() || '',
-            url: article.url,
-            imageUrl: article.image || null,
-            publishedAt: new Date(article.published_at),
-            source: cleanSourceName(article.source || 'Mediastack'),
-            author: article.author?.trim() || 'Unknown Author',
-            metadata: { 
-              priority: 'medium' as const, 
-              apiSource,
-              tags: ['technology', 'news']
-            }
-          };
-
-        default:
-          return null;
-      }
-    } catch (error) {
-      console.error(`Error normalizing article from ${apiSource}:`, error);
-      return null;
-    }
-  }
 
   // Refresh news and clear cache (force fresh API fetch)
   app.post("/api/news/refresh", async (req, res) => {
     try {
-      // Clear cache to force fresh fetch
-      cache.data = null;
-      cache.timestamp = 0;
-      
-      console.log('Cache cleared, forcing fresh API fetch...');
-      
-      // Make a request to our own endpoint to trigger fresh fetch
-      const response = await fetch(`${req.protocol}://${req.get('host')}/api/news`);
-      const articles = await response.json();
-      
-      res.json({ 
-        message: `Successfully refreshed cache with fresh articles`,
-        articlesCount: Array.isArray(articles) ? articles.length : articles.articles?.length || 0,
-        timestamp: new Date().toISOString()
-      });
+      const category = req.query.category as string;
+
+      console.log(`🔄 Manual refresh requested for category: ${category || 'all'}`);
+
+      if (category) {
+        // Clear specific category cache
+        const cacheKey = getCacheKey(category);
+        const cacheEntry = getCacheEntry(cacheKey);
+        cacheEntry.data = [];
+        cacheEntry.timestamp = 0;
+        console.log(`🗑️ Cleared cache for category: ${cacheKey}`);
+
+        // Trigger refresh for this category
+        await refreshNewsInBackground(category);
+
+        res.json({
+          message: `Successfully refreshed cache for category: ${category}`,
+          category: category,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Clear all caches
+        categoryCache.clear();
+        console.log(`🗑️ Cleared all category caches`);
+
+        // Trigger refresh for general category
+        await refreshNewsInBackground();
+
+        res.json({
+          message: `Successfully refreshed all caches`,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch (error) {
-      console.error("Error refreshing news:", error);
-      res.status(500).json({ message: "Failed to refresh news" });
+      console.error("❌ Error refreshing news:", error);
+      res.status(500).json({ message: "Failed to refresh news", error: error.message });
     }
   });
 

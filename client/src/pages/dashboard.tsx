@@ -94,6 +94,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("trending");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTimeFilter, setActiveTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -102,9 +103,13 @@ export default function Dashboard() {
     queryFn: () => newsApi.getCategories(),
   });
 
+  // Use selected categories for filtering, fallback to default categories if none selected
+  const effectiveCategories = selectedCategories.length > 0 ? selectedCategories : ['technologies'];
+  const categoriesParam = effectiveCategories.join(',');
+
   const { data: trendingArticles = [], isLoading: trendingLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'technologies', limit: 6, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ category: 'technologies', limit: 6, timeFilter: activeTimeFilter }),
+    queryKey: ['/api/news', { categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }],
+    queryFn: () => newsApi.getNews({ categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }),
   });
 
   const { data: sportsArticles = [], isLoading: sportsLoading } = useQuery({
@@ -126,6 +131,17 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
+  const handleCategoryToggle = (category: string, checked: boolean) => {
+    setSelectedCategories(prev => {
+      if (checked) {
+        return [...prev, category];
+      } else {
+        return prev.filter(cat => cat !== category);
+      }
+    });
+    setCurrentPage(1);
+  };
+
   const handleTimeFilterChange = (timeFilter: string) => {
     setActiveTimeFilter(timeFilter);
     setCurrentPage(1);
@@ -142,8 +158,10 @@ export default function Dashboard() {
         <EnhancedSidebar 
           categories={categories}
           activeCategory={activeCategory}
+          selectedCategories={selectedCategories}
           activeTimeFilter={activeTimeFilter}
           onCategoryChange={handleCategoryChange}
+          onCategoryToggle={handleCategoryToggle}
           onTimeFilterChange={handleTimeFilterChange}
         />
         

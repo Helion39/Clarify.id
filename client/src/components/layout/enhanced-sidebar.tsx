@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Calendar, 
   Filter, 
@@ -29,8 +30,10 @@ interface Category {
 interface EnhancedSidebarProps {
   categories: Category[];
   activeCategory: string;
+  selectedCategories: string[];
   activeTimeFilter: string;
   onCategoryChange: (category: string) => void;
+  onCategoryToggle: (category: string, checked: boolean) => void;
   onTimeFilterChange: (timeFilter: string) => void;
 }
 
@@ -45,8 +48,10 @@ const timeFilters = [
 export function EnhancedSidebar({
   categories,
   activeCategory,
+  selectedCategories,
   activeTimeFilter,
   onCategoryChange,
+  onCategoryToggle,
   onTimeFilterChange,
 }: EnhancedSidebarProps) {
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
@@ -90,7 +95,7 @@ export function EnhancedSidebar({
 
         <Separator />
 
-        {/* Categories Section */}
+        {/* Categories Section - Checkbox Filters */}
         <div>
           <button
             onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
@@ -99,9 +104,14 @@ export function EnhancedSidebar({
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-gray-600" />
               <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                CATEGORY
+                CATEGORY FILTERS
               </h2>
             </div>
+            {selectedCategories.length > 0 && (
+              <Badge variant="default" className="text-xs bg-blue-600">
+                {selectedCategories.length}
+              </Badge>
+            )}
             {isCategoryExpanded ? (
               <ChevronUp className="h-4 w-4 text-gray-600" />
             ) : (
@@ -110,7 +120,21 @@ export function EnhancedSidebar({
           </button>
           
           {isCategoryExpanded && (
-            <div className="space-y-1">
+            <div className="space-y-2">
+              {/* Clear All Button */}
+              {selectedCategories.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    selectedCategories.forEach(cat => onCategoryToggle(cat, false));
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+              )}
+              
               {categories.map((category) => {
                 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
                   technologies: Monitor,
@@ -124,27 +148,31 @@ export function EnhancedSidebar({
                 };
 
                 const IconComponent = categoryIcons[category.slug] || FileText;
+                const isSelected = selectedCategories.includes(category.slug);
 
                 return (
-                  <button
+                  <div
                     key={category.id}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center justify-between ${
-                      activeCategory === category.slug
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-700 hover:bg-gray-50'
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-gray-50 ${
+                      isSelected ? 'bg-blue-50 border border-blue-200' : ''
                     }`}
-                    onClick={() => onCategoryChange(category.slug)}
                   >
-                    <span className="flex items-center space-x-2">
+                    <label
+                      htmlFor={`category-${category.slug}`}
+                      className={`flex items-center space-x-2 text-sm cursor-pointer flex-1 ${
+                        isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                      }`}
+                    >
                       <IconComponent className="h-4 w-4" />
                       <span className="capitalize">{category.name}</span>
-                    </span>
-                    {activeCategory === category.slug && (
-                      <Badge variant="secondary" className="text-xs">
-                        Active
-                      </Badge>
-                    )}
-                  </button>
+                    </label>
+                    <Checkbox
+                      id={`category-${category.slug}`}
+                      checked={isSelected}
+                      onCheckedChange={(checked) => onCategoryToggle(category.slug, checked as boolean)}
+                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                  </div>
                 );
               })}
             </div>

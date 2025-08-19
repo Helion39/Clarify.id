@@ -19,6 +19,7 @@ export const newsArticles = pgTable("news_articles", {
     readTime?: number;
     tags?: string[];
     priority?: 'high' | 'medium' | 'low';
+    apiSource?: string;
   }>(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
