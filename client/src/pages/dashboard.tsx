@@ -10,6 +10,7 @@ import { newsApi } from "@/lib/news-api";
 import { Eye, Clock, ChevronRight, ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { NewsArticle } from "@shared/schema";
+import { CategoryPlaceholder } from "@/components/ui/category-placeholder";
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -34,13 +35,22 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
     return (
       <Link href={`/article/${article.id}`}>
         <article className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-          {article.imageUrl && (
+          {article.imageUrl ? (
             <div className="relative">
               <img 
                 src={article.imageUrl} 
                 alt={article.title}
                 className="w-full h-64 object-cover"
               />
+              <div className="absolute top-4 left-4">
+                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                  {article.category}
+                </Badge>
+              </div>
+            </div>
+          ) : (
+            <div className="relative">
+              <CategoryPlaceholder categoryName={article.category} className="w-full h-64" />
               <div className="absolute top-4 left-4">
                 <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
                   {article.category}
@@ -69,12 +79,14 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
   return (
     <Link href={`/article/${article.id}`}>
       <article className="flex space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
-        {article.imageUrl && (
+        {article.imageUrl ? (
           <img 
             src={article.imageUrl} 
             alt={article.title}
             className="w-20 h-16 object-cover rounded flex-shrink-0"
           />
+        ) : (
+          <CategoryPlaceholder categoryName={article.category} className="w-20 h-16 rounded flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
@@ -93,50 +105,41 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("trending");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTimeFilter, setActiveTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['/api/categories'],
+    queryKey: ["/api/categories"],
     queryFn: () => newsApi.getCategories(),
   });
 
-  // Use selected categories for filtering, fallback to default categories if none selected
-  const effectiveCategories = selectedCategories.length > 0 ? selectedCategories : ['technologies'];
-  const categoriesParam = effectiveCategories.join(',');
+  const categoriesParam = selectedCategories.join(",");
 
-  const { data: trendingArticles = [], isLoading: trendingLoading } = useQuery({
-    queryKey: ['/api/news', { categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }),
-  });
-
-  const { data: sportsArticles = [], isLoading: sportsLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'sports', limit: 4, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ category: 'sports', limit: 4, timeFilter: activeTimeFilter }),
-  });
-
-  const { data: entertainmentArticles = [], isLoading: entertainmentLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'games', limit: 6, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ category: 'games', limit: 6, timeFilter: activeTimeFilter }),
+  const { data: articles = [], isLoading: articlesLoading } = useQuery({
+    queryKey: [
+      "/api/news",
+      { categories: categoriesParam, limit: 50, timeFilter: activeTimeFilter },
+    ],
+    queryFn: () =>
+      newsApi.getNews({
+        categories: categoriesParam,
+        limit: 50,
+        timeFilter: activeTimeFilter,
+      }),
   });
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setActiveCategory(category);
-    setCurrentPage(1);
+    // Maybe reset pagination here if you implement search filtering
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
-    setSelectedCategories(prev => {
+    setSelectedCategories((prev) => {
       if (checked) {
         return [...prev, category];
       } else {
-        return prev.filter(cat => cat !== category);
+        return prev.filter((cat) => cat !== category);
       }
     });
     setCurrentPage(1);
@@ -147,130 +150,104 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  const featuredArticle = trendingArticles[0];
-  const sidebarArticles = trendingArticles.slice(1, 6);
+  const featuredArticle = articles[0];
+  const trendingArticles = articles.slice(1, 5);
+  const otherArticles = articles.slice(5);
+  const sidebarArticles = articles.slice(0, 5); // Use top 5 articles for sidebar
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header onSearch={handleSearch} searchQuery={searchQuery} />
-      
+
       <div className="flex">
-        <EnhancedSidebar 
+        <EnhancedSidebar
           categories={categories}
-          activeCategory={activeCategory}
           selectedCategories={selectedCategories}
           activeTimeFilter={activeTimeFilter}
-          onCategoryChange={handleCategoryChange}
           onCategoryToggle={handleCategoryToggle}
           onTimeFilterChange={handleTimeFilterChange}
         />
-        
+
         <div className="flex-1 max-w-6xl mx-auto px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Trending News Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Trending News</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+              {articlesLoading ? (
+                // Show a skeleton loader for the whole section
+                <div className="space-y-8">
+                  <NewsCardSkeleton variant="large" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[...Array(4)].map((_, i) => (
+                      <NewsCardSkeleton key={i} />
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {trendingLoading ? (
-                    <>
-                      <div className="md:col-span-2">
-                        <NewsCardSkeleton variant="large" />
-                      </div>
-                      {[...Array(2)].map((_, i) => (
-                        <NewsCardSkeleton key={i} />
-                      ))}
-                    </>
-                  ) : (
-                    <>
+              ) : articles.length > 0 ? (
+                <>
+                  {/* Trending Section */}
+                  <section>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedCategories.length > 0
+                          ? "Top Stories"
+                          : "Trending News"}
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {featuredArticle && (
                         <div className="md:col-span-2">
-                          <NewsCard article={featuredArticle} variant="large" />
+                          <NewsCard
+                            article={featuredArticle}
+                            variant="large"
+                          />
                         </div>
                       )}
-                      {trendingArticles.slice(1, 3).map((article) => (
+                      {trendingArticles.map((article) => (
                         <NewsCard key={article.id} article={article} />
                       ))}
-                    </>
-                  )}
-                </div>
-              </section>
+                    </div>
+                  </section>
 
-              {/* Sport Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Sport</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {sportsLoading ? (
-                    [...Array(2)].map((_, i) => (
-                      <NewsCardSkeleton key={i} />
-                    ))
-                  ) : (
-                    sportsArticles.slice(0, 2).map((article) => (
-                      <NewsCard key={article.id} article={article} />
-                    ))
+                  {/* More News Section */}
+                  {otherArticles.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          More News
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {otherArticles.map((article) => (
+                          <NewsCard key={article.id} article={article} />
+                        ))}
+                      </div>
+                    </section>
                   )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <h2 className="text-xl font-semibold text-gray-700">No articles found.</h2>
+                  <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
                 </div>
-              </section>
-
-              {/* Entertainment Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Entertainments</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {entertainmentLoading ? (
-                    [...Array(6)].map((_, i) => (
-                      <EntertainmentCardSkeleton key={i} />
-                    ))
-                  ) : (
-                    entertainmentArticles.map((article) => (
-                      <Link key={article.id} href={`/article/${article.id}`}>
-                        <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                          {article.imageUrl && (
-                            <img 
-                              src={article.imageUrl} 
-                              alt={article.title}
-                              className="w-full h-24 object-cover rounded-lg mb-2"
-                            />
-                          )}
-                          <h3 className="text-xs font-medium text-gray-900 line-clamp-2">
-                            {article.title.substring(0, 50)}...
-                          </h3>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </section>
+              )}
             </div>
-            
-            {/* Right Sidebar - Trending Topics */}
+
+            {/* Right Sidebar - Also uses the main articles list */}
             <div className="lg:col-span-1">
-              {trendingLoading ? (
+              {articlesLoading ? (
                 <SidebarSkeleton />
               ) : (
                 <div className="bg-white rounded-lg p-6 sticky top-20">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Trending Topics</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Popular Topics
+                  </h3>
                   <div className="space-y-4">
                     {sidebarArticles.map((article) => (
-                      <NewsCard key={article.id} article={article} variant="small" />
+                      <NewsCard
+                        key={article.id}
+                        article={article}
+                        variant="small"
+                      />
                     ))}
                   </div>
                 </div>
