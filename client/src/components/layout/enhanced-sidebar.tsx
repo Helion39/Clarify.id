@@ -2,7 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Filter, TrendingUp } from "lucide-react";
+import { 
+  Calendar, 
+  Filter, 
+  TrendingUp, 
+  Newspaper, 
+  Monitor, 
+  Building, 
+  Briefcase, 
+  Microscope, 
+  Heart, 
+  Trophy, 
+  Film, 
+  Gamepad2,
+  FileText,
+  ChevronDown,
+  ChevronUp
+} from "lucide-react";
 
 interface Category {
   id: string;
@@ -33,6 +49,8 @@ export function EnhancedSidebar({
   onCategoryChange,
   onTimeFilterChange,
 }: EnhancedSidebarProps) {
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">
       <div className="p-4 space-y-6">
@@ -46,24 +64,26 @@ export function EnhancedSidebar({
           </div>
           <div className="space-y-1">
             <button 
-              className={`w-full text-left px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg font-medium transition-colors flex items-center space-x-2 ${
                 activeCategory === 'trending' 
                   ? 'text-blue-600 bg-blue-50' 
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
               onClick={() => onCategoryChange('trending')}
             >
-              🔥 Trending
+              <TrendingUp className="h-4 w-4" />
+              <span>Trending</span>
             </button>
             <button 
-              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center space-x-2 ${
                 activeCategory === 'all' 
                   ? 'text-blue-600 bg-blue-50' 
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
               onClick={() => onCategoryChange('all')}
             >
-              📰 All News
+              <Newspaper className="h-4 w-4" />
+              <span>All News</span>
             </button>
           </div>
         </div>
@@ -72,48 +92,63 @@ export function EnhancedSidebar({
 
         {/* Categories Section */}
         <div>
-          <div className="flex items-center space-x-2 mb-3">
-            <Filter className="h-4 w-4 text-gray-600" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              CATEGORY
-            </h2>
-          </div>
-          <div className="space-y-1">
-            {categories.map((category) => {
-              const categoryEmojis: Record<string, string> = {
-                technologies: '💻',
-                politics: '🏛️',
-                business: '💼',
-                science: '🔬',
-                health: '🏥',
-                sports: '⚽',
-                entertainment: '🎬',
-                games: '🎮'
-              };
+          <button
+            onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+            className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 rounded-lg p-1 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                CATEGORY
+              </h2>
+            </div>
+            {isCategoryExpanded ? (
+              <ChevronUp className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
+          
+          {isCategoryExpanded && (
+            <div className="space-y-1">
+              {categories.map((category) => {
+                const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+                  technologies: Monitor,
+                  politics: Building,
+                  business: Briefcase,
+                  science: Microscope,
+                  health: Heart,
+                  sports: Trophy,
+                  entertainment: Film,
+                  games: Gamepad2
+                };
 
-              return (
-                <button
-                  key={category.id}
-                  className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center justify-between ${
-                    activeCategory === category.slug
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  onClick={() => onCategoryChange(category.slug)}
-                >
-                  <span className="flex items-center space-x-2">
-                    <span>{categoryEmojis[category.slug] || '📄'}</span>
-                    <span className="capitalize">{category.name}</span>
-                  </span>
-                  {activeCategory === category.slug && (
-                    <Badge variant="secondary" className="text-xs">
-                      Active
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                const IconComponent = categoryIcons[category.slug] || FileText;
+
+                return (
+                  <button
+                    key={category.id}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center justify-between ${
+                      activeCategory === category.slug
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                    onClick={() => onCategoryChange(category.slug)}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <IconComponent className="h-4 w-4" />
+                      <span className="capitalize">{category.name}</span>
+                    </span>
+                    {activeCategory === category.slug && (
+                      <Badge variant="secondary" className="text-xs">
+                        Active
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <Separator />

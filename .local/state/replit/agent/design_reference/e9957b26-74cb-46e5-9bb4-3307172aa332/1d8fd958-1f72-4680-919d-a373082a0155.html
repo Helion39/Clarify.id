@@ -1,0 +1,468 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarify.id - Trusted News Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'dashboard-bg': '#F8F9FA',
+                        'charcoal': '#333333',
+                        'trust-red': '#DC2626',
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="font-inter bg-dashboard-bg">
+    <!-- @COMPONENT: Header [navigation, search, branding] -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo and Brand -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-charcoal">Clarify.id</h1>
+                        <p class="text-xs text-gray-500 -mt-1">Trusted News</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#" class="text-charcoal hover:text-trust-red px-3 py-2 text-sm font-medium border-b-2 border-trust-red">Dashboard</a>
+                        <a href="#" class="text-gray-500 hover:text-charcoal px-3 py-2 text-sm font-medium">Live Feed</a>
+                        <a href="#" class="text-gray-500 hover:text-charcoal px-3 py-2 text-sm font-medium">Trending</a>
+                        <a href="#" class="text-gray-500 hover:text-charcoal px-3 py-2 text-sm font-medium">About</a>
+                    </div>
+                </nav>
+
+                <!-- Search and Actions -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Search news..." 
+                               class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-trust-red focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button class="p-2 text-gray-400 hover:text-charcoal">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <!-- @COMPONENT: LeftSidebar [categories, navigation] -->
+            <aside class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-24">
+                    <h3 class="text-lg font-semibold text-charcoal mb-4">Categories</h3>
+                    <nav class="space-y-2">
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-white bg-trust-red rounded-lg">
+                            <i class="fas fa-newspaper mr-3"></i>
+                            All News
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-laptop-code mr-3"></i>
+                            Technology
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-university mr-3"></i>
+                            Politics
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Business
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-flask mr-3"></i>
+                            Science
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-heartbeat mr-3"></i>
+                            Health
+                        </a>
+                        <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-charcoal hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-globe mr-3"></i>
+                            World
+                        </a>
+                    </nav>
+
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h4 class="text-sm font-semibold text-charcoal mb-3">Trusted Sources</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Reuters
+                            </div>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Associated Press
+                            </div>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                BBC News
+                            </div>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                NPR
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            <!-- @END_COMPONENT: LeftSidebar -->
+
+            <!-- @COMPONENT: MainContent [featured articles, news feed] -->
+            <main class="lg:col-span-2">
+                <!-- Featured Article -->
+                <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8">
+                    <!-- Large meeting room with politicians during congressional hearing -->
+                    <img src="https://pixabay.com/get/g54c03b58788bd90fe859de1850c10109f53bf9750d7a024b5f49a7521eb5c5990a345a32577dc3931e67c1a11d80a7cc35dca35d3c77a324109263d674d715d8_1280.jpg" 
+                         alt="Congressional hearing in session" 
+                         class="w-full h-64 object-cover">
+                    <div class="p-6">
+                        <div class="flex items-center space-x-4 mb-3">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-trust-red text-white">
+                                <i class="fas fa-university mr-1"></i>
+                                Politics
+                            </span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-shield-alt mr-1"></i>
+                                Verified Source
+                            </span>
+                            <span class="text-sm text-gray-500">2 hours ago</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-charcoal mb-3 hover:text-trust-red cursor-pointer">
+                            <span data-bind="article.headline">Intelligence Committee to Begin Circulating Draft Ukraine Report Monday</span>
+                        </h2>
+                        <p class="text-gray-600 mb-4" data-bind="article.summary">
+                            Members of the House Intelligence Committee will begin reviewing a report Monday on the panel's investigation of President Donald Trump's request for Ukraine to investigate his Democratic adversaries, a crucial step in the House's fast-moving impeachment inquiry.
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-medium text-charcoal" data-bind="article.source">Reuters</span>
+                                <span class="text-sm text-gray-500">•</span>
+                                <span class="text-sm text-gray-500" data-bind="article.author">By Sarah Wilson</span>
+                            </div>
+                            <a href="#" class="text-trust-red hover:underline text-sm font-medium">
+                                Read Full Article <i class="fas fa-external-link-alt ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- News Feed -->
+                <div class="space-y-6">
+                    <h3 class="text-lg font-semibold text-charcoal">Latest News</h3>
+                    
+                    <!-- @MAP: newsArticles.map(article => ( -->
+                    <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="md:flex">
+                            <div class="md:flex-shrink-0">
+                                <!-- AI and technology conference with speakers on stage -->
+                                <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&h=200" 
+                                     alt="Technology conference" 
+                                     class="h-48 w-full object-cover md:h-32 md:w-48">
+                            </div>
+                            <div class="p-4 flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-laptop-code mr-1"></i>
+                                        Technology
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-shield-alt mr-1"></i>
+                                        Verified
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-semibold text-charcoal mb-2 hover:text-trust-red cursor-pointer">
+                                    AI Companies Announce New Safety Standards for Large Language Models
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-2">
+                                    Leading artificial intelligence companies have agreed to implement new safety protocols...
+                                </p>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-medium text-charcoal">Associated Press</span>
+                                        <span class="text-gray-500">4 hours ago</span>
+                                    </div>
+                                    <a href="#" class="text-trust-red hover:underline">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="md:flex">
+                            <div class="md:flex-shrink-0">
+                                <!-- Business executives in modern office building discussing strategy -->
+                                <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&h=200" 
+                                     alt="Business meeting" 
+                                     class="h-48 w-full object-cover md:h-32 md:w-48">
+                            </div>
+                            <div class="p-4 flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-chart-line mr-1"></i>
+                                        Business
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-shield-alt mr-1"></i>
+                                        Verified
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-semibold text-charcoal mb-2 hover:text-trust-red cursor-pointer">
+                                    Major Tech Companies Report Strong Q4 Earnings Despite Market Volatility
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-2">
+                                    Several technology giants exceeded analyst expectations in their latest quarterly reports...
+                                </p>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-medium text-charcoal">Reuters</span>
+                                        <span class="text-gray-500">6 hours ago</span>
+                                    </div>
+                                    <a href="#" class="text-trust-red hover:underline">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="md:flex">
+                            <div class="md:flex-shrink-0">
+                                <!-- Scientists in laboratory conducting research with microscopes and equipment -->
+                                <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&h=200" 
+                                     alt="Scientific research laboratory" 
+                                     class="h-48 w-full object-cover md:h-32 md:w-48">
+                            </div>
+                            <div class="p-4 flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <i class="fas fa-flask mr-1"></i>
+                                        Science
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-shield-alt mr-1"></i>
+                                        Verified
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-semibold text-charcoal mb-2 hover:text-trust-red cursor-pointer">
+                                    Breakthrough in Quantum Computing Could Revolutionize Data Processing
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-2">
+                                    Researchers at leading universities have made significant advances in quantum error correction...
+                                </p>
+                                <div class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-medium text-charcoal">BBC Science</span>
+                                        <span class="text-gray-500">8 hours ago</span>
+                                    </div>
+                                    <a href="#" class="text-trust-red hover:underline">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- @END_MAP )) -->
+
+                    <!-- Load More Button -->
+                    <div class="text-center pt-6">
+                        <button class="bg-trust-red text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                            Load More Articles
+                        </button>
+                    </div>
+                </div>
+            </main>
+            <!-- @END_COMPONENT: MainContent -->
+
+            <!-- @COMPONENT: RightSidebar [related news, trending] -->
+            <aside class="lg:col-span-1">
+                <div class="space-y-6">
+                    <!-- Trending Section -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-charcoal mb-4">Trending Now</h3>
+                        <div class="space-y-4">
+                            <article class="border-b border-gray-100 pb-3 last:border-b-0">
+                                <div class="flex space-x-3">
+                                    <!-- Press conference with government officials at podium -->
+                                    <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=80&h=60" 
+                                         alt="Government press conference" 
+                                         class="w-16 h-12 object-cover rounded">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-charcoal hover:text-trust-red cursor-pointer">
+                                            Democrats Move Rapidly on Impeachment Process
+                                        </h4>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs text-gray-500">NPR</span>
+                                            <span class="text-xs text-gray-500">1h ago</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="fas fa-shield-alt mr-1"></i>
+                                                Verified
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="border-b border-gray-100 pb-3 last:border-b-0">
+                                <div class="flex space-x-3">
+                                    <!-- Modern office workers collaborating on technology project -->
+                                    <img src="https://images.unsplash.com/photo-1556761175-4b46a572b786?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=80&h=60" 
+                                         alt="Technology collaboration" 
+                                         class="w-16 h-12 object-cover rounded">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-charcoal hover:text-trust-red cursor-pointer">
+                                            Tech Giants Form AI Safety Alliance
+                                        </h4>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs text-gray-500">Reuters</span>
+                                            <span class="text-xs text-gray-500">3h ago</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="fas fa-shield-alt mr-1"></i>
+                                                Verified
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="border-b border-gray-100 pb-3 last:border-b-0">
+                                <div class="flex space-x-3">
+                                    <!-- Financial district with skyscrapers and business people -->
+                                    <img src="https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=80&h=60" 
+                                         alt="Financial district" 
+                                         class="w-16 h-12 object-cover rounded">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-charcoal hover:text-trust-red cursor-pointer">
+                                            Markets React to Federal Reserve Decision
+                                        </h4>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs text-gray-500">AP Business</span>
+                                            <span class="text-xs text-gray-500">5h ago</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="fas fa-shield-alt mr-1"></i>
+                                                Verified
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+
+                    <!-- Most Read Section -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-charcoal mb-4">Most Read</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 w-6 h-6 bg-trust-red text-white rounded-full text-xs flex items-center justify-center font-semibold">1</span>
+                                <div>
+                                    <h4 class="text-sm font-medium text-charcoal hover:text-trust-red cursor-pointer">
+                                        Climate Summit Reaches Historic Agreement
+                                    </h4>
+                                    <span class="text-xs text-gray-500">BBC News • 12h ago</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 w-6 h-6 bg-gray-400 text-white rounded-full text-xs flex items-center justify-center font-semibold">2</span>
+                                <div>
+                                    <h4 class="text-sm font-medium text-charcoal hover:text-trust-red cursor-pointer">
+                                        New Medical Treatment Shows Promise
+                                    </h4>
+                                    <span class="text-xs text-gray-500">Reuters Health • 14h ago</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 w-6 h-6 bg-gray-400 text-white rounded-full text-xs flex items-center justify-center font-semibold">3</span>
+                                <div>
+                                    <h4 class="text-sm font-medium text-charcoal hover:text-trust-red cursor-pointer">
+                                        Space Mission Discovers New Findings
+                                    </h4>
+                                    <span class="text-xs text-gray-500">NASA • 16h ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trust Badge -->
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-6">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-shield-alt text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-sm font-semibold text-charcoal mb-2">100% Verified Sources</h3>
+                            <p class="text-xs text-gray-600">
+                                All news articles are sourced from our curated list of trusted, reputable news organizations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            <!-- @END_COMPONENT: RightSidebar -->
+        </div>
+    </div>
+
+    <!-- @STATE: newsCategories:array, activeCategory:string, searchQuery:string -->
+    <!-- @FUNCTIONALITY: Real-time news fetching, category filtering, search functionality, source verification -->
+    
+    <script>
+        // TODO: Implement real-time news API integration
+        // TODO: Add category filtering functionality
+        // TODO: Implement search functionality
+        // TODO: Add news refresh mechanism
+        // TODO: Handle error states for failed API calls
+        
+        (function() {
+            // Basic interaction handlers for demo
+            const searchInput = document.querySelector('input[type="text"]');
+            const categoryLinks = document.querySelectorAll('aside nav a');
+            
+            // Search functionality placeholder
+            searchInput?.addEventListener('input', function(e) {
+                console.log('Search query:', e.target.value);
+                // TODO: Implement news search API call
+            });
+            
+            // Category selection placeholder
+            categoryLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Update active category styling
+                    categoryLinks.forEach(l => {
+                        l.classList.remove('text-white', 'bg-trust-red');
+                        l.classList.add('text-gray-600', 'hover:text-charcoal', 'hover:bg-gray-50');
+                    });
+                    
+                    this.classList.remove('text-gray-600', 'hover:text-charcoal', 'hover:bg-gray-50');
+                    this.classList.add('text-white', 'bg-trust-red');
+                    
+                    console.log('Category selected:', this.textContent.trim());
+                    // TODO: Implement category filtering
+                });
+            });
+            
+            // Auto-refresh news feed placeholder
+            setInterval(() => {
+                console.log('Auto-refreshing news feed...');
+                // TODO: Implement automatic news refresh
+            }, 300000); // 5 minutes
+        })();
+    </script>
+</body>
+</html>
