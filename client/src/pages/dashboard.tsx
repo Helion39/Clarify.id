@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/header";
 import { EnhancedSidebar } from "@/components/layout/enhanced-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewsCardSkeleton, EntertainmentCardSkeleton, SidebarSkeleton } from "@/components/ui/news-skeleton";
@@ -108,6 +109,7 @@ export default function Dashboard() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTimeFilter, setActiveTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/categories"],
@@ -151,17 +153,22 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  const featuredArticle = articles[0];
-  const trendingArticles = articles.slice(1, 5);
-  const otherArticles = articles.slice(5);
-  const sidebarArticles = articles.slice(0, 5); // Use top 5 articles for sidebar
+  const handleSidebarToggle = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onSearch={handleSearch} searchQuery={searchQuery} />
+      <Header
+        onSearch={handleSearch}
+        searchQuery={searchQuery}
+        onSidebarToggle={handleSidebarToggle}
+      />
 
       <div className="flex">
         <EnhancedSidebar
+          isOpen={isSidebarOpen}
+          onToggle={handleSidebarToggle}
           categories={categories}
           selectedCategories={selectedCategories}
           activeTimeFilter={activeTimeFilter}
@@ -169,92 +176,52 @@ export default function Dashboard() {
           onTimeFilterChange={handleTimeFilterChange}
         />
 
-        <div className="flex-1 max-w-6xl mx-auto px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {articlesLoading ? (
-                // Show a skeleton loader for the whole section
-                <div className="space-y-8">
-                  <NewsCardSkeleton variant="large" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[...Array(4)].map((_, i) => (
-                      <NewsCardSkeleton key={i} />
-                    ))}
-                  </div>
+        <div className="flex-1 max-w-7xl mx-auto px-6 py-6">
+          {articlesLoading ? (
+            // Skeleton for the new layout
+            <div className="space-y-8">
+                <NewsCardSkeleton variant="large" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => <NewsCardSkeleton key={i} />)}
                 </div>
-              ) : articles.length > 0 ? (
-                <>
-                  {/* Trending Section */}
-                  <section>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {selectedCategories.length > 0
-                          ? "Top Stories"
-                          : "Trending News"}
-                      </h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {featuredArticle && (
-                        <div className="md:col-span-2">
-                          <NewsCard
-                            article={featuredArticle}
-                            variant="large"
-                          />
-                        </div>
-                      )}
-                      {trendingArticles.map((article) => (
-                        <NewsCard key={article.id} article={article} />
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* More News Section */}
-                  {otherArticles.length > 0 && (
-                    <section>
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                          More News
-                        </h2>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {otherArticles.map((article) => (
-                          <NewsCard key={article.id} article={article} />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <h2 className="text-xl font-semibold text-gray-700">No articles found.</h2>
-                  <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(9)].map((_, i) => <NewsCardSkeleton key={i} />)}
                 </div>
-              )}
             </div>
-
-            {/* Right Sidebar - Also uses the main articles list */}
-            <div className="lg:col-span-1">
-              {articlesLoading ? (
-                <SidebarSkeleton />
-              ) : (
-                <div className="bg-white rounded-lg p-6 sticky top-20">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Popular Topics
-                  </h3>
-                  <div className="space-y-4">
-                    {sidebarArticles.map((article) => (
-                      <NewsCard
-                        key={article.id}
-                        article={article}
-                        variant="small"
-                      />
-                    ))}
-                  </div>
+          ) : articles.length > 0 ? (
+            <div className="space-y-8">
+              {/* Popular Topics Section */}
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Popular Topics
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {articles.slice(0, 4).map((article) => (
+                    <NewsCard key={article.id} article={article} />
+                  ))}
                 </div>
-              )}
+              </section>
+
+              {/* Main Feed Section */}
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  {selectedCategories.length > 0
+                    ? "Top Stories"
+                    : "All News"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {articles.slice(4).map((article) => (
+                    <NewsCard key={article.id} article={article} variant="large" />
+                  ))}
+                </div>
+              </section>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold text-gray-700">No articles found.</h2>
+              <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

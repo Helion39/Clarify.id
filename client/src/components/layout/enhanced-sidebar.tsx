@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +29,8 @@ interface Category {
 }
 
 interface EnhancedSidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
   categories: Category[];
   selectedCategories: string[];
   activeTimeFilter: string;
@@ -44,6 +47,8 @@ const timeFilters = [
 ];
 
 export function EnhancedSidebar({
+  isOpen,
+  onToggle,
   categories,
   selectedCategories,
   activeTimeFilter,
@@ -51,10 +56,32 @@ export function EnhancedSidebar({
   onTimeFilterChange,
 }: EnhancedSidebarProps) {
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
+  const isMobile = useIsMobile();
+
+  // On mobile, the sidebar is only rendered when it's open.
+  // On desktop, it's part of the layout.
+  const isVisible = isMobile ? isOpen : true;
+  const isOverlayVisible = isMobile && isOpen;
+
+  if (!isVisible && isMobile) {
+    return null;
+  }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">
-      <div className="p-4 space-y-6">
+    <>
+      {/* Overlay for mobile */}
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden ${
+          isOverlayVisible ? 'block' : 'hidden'
+        }`}
+        onClick={onToggle}
+      ></div>
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto transition-transform duration-300 ease-in-out transform md:sticky md:top-14 md:h-[calc(100vh-56px)] ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0`}
+      >
+        <div className="p-4 space-y-6">
         {/* Categories Section */}
         <div>
           <button
@@ -125,7 +152,7 @@ export function EnhancedSidebar({
                       id={`category-${category.slug}`}
                       checked={isSelected}
                       onCheckedChange={(checked) => onCategoryToggle(category.slug, checked as boolean)}
-                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                   </div>
                 );
@@ -162,5 +189,6 @@ export function EnhancedSidebar({
         </div>
       </div>
     </div>
+    </>
   );
 }
