@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { EnhancedSidebar } from "@/components/layout/enhanced-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { NewsCardSkeleton, EntertainmentCardSkeleton, SidebarSkeleton } from "@/components/ui/news-skeleton";
 import { newsApi } from "@/lib/news-api";
-import { Eye, Clock, ChevronRight } from "lucide-react";
+import { Eye, Clock, ChevronRight, ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { NewsArticle } from "@shared/schema";
 
@@ -93,24 +93,42 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("trending");
+  const [activeTimeFilter, setActiveTimeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: () => newsApi.getCategories(),
+  });
 
   const { data: trendingArticles = [], isLoading: trendingLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'technologies', limit: 6 }],
-    queryFn: () => newsApi.getNews({ category: 'technologies', limit: 6 }),
+    queryKey: ['/api/news', { category: 'technologies', limit: 6, timeFilter: activeTimeFilter }],
+    queryFn: () => newsApi.getNews({ category: 'technologies', limit: 6, timeFilter: activeTimeFilter }),
   });
 
   const { data: sportsArticles = [], isLoading: sportsLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'sports', limit: 4 }],
-    queryFn: () => newsApi.getNews({ category: 'sports', limit: 4 }),
+    queryKey: ['/api/news', { category: 'sports', limit: 4, timeFilter: activeTimeFilter }],
+    queryFn: () => newsApi.getNews({ category: 'sports', limit: 4, timeFilter: activeTimeFilter }),
   });
 
   const { data: entertainmentArticles = [], isLoading: entertainmentLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'games', limit: 6 }],
-    queryFn: () => newsApi.getNews({ category: 'games', limit: 6 }),
+    queryKey: ['/api/news', { category: 'games', limit: 6, timeFilter: activeTimeFilter }],
+    queryFn: () => newsApi.getNews({ category: 'games', limit: 6, timeFilter: activeTimeFilter }),
   });
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1);
+  };
+
+  const handleTimeFilterChange = (timeFilter: string) => {
+    setActiveTimeFilter(timeFilter);
+    setCurrentPage(1);
   };
 
   const featuredArticle = trendingArticles[0];
@@ -121,19 +139,13 @@ export default function Dashboard() {
       <Header onSearch={handleSearch} searchQuery={searchQuery} />
       
       <div className="flex">
-        <div className="w-64 bg-white border-r border-gray-200 sticky top-14 h-[calc(100vh-56px)] p-4">
-          <div className="mb-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">LATEST NEWS</h2>
-          </div>
-          <div className="space-y-1">
-            <button className="w-full text-left px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg font-medium">
-              🔥 Trending
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-              📰 All News
-            </button>
-          </div>
-        </div>
+        <EnhancedSidebar 
+          categories={categories}
+          activeCategory={activeCategory}
+          activeTimeFilter={activeTimeFilter}
+          onCategoryChange={handleCategoryChange}
+          onTimeFilterChange={handleTimeFilterChange}
+        />
         
         <div className="flex-1 max-w-6xl mx-auto px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -152,10 +164,10 @@ export default function Dashboard() {
                   {trendingLoading ? (
                     <>
                       <div className="md:col-span-2">
-                        <Skeleton className="h-64 w-full rounded-lg" />
+                        <NewsCardSkeleton variant="large" />
                       </div>
                       {[...Array(2)].map((_, i) => (
-                        <Skeleton key={i} className="h-40 w-full rounded-lg" />
+                        <NewsCardSkeleton key={i} />
                       ))}
                     </>
                   ) : (
@@ -185,7 +197,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {sportsLoading ? (
                     [...Array(2)].map((_, i) => (
-                      <Skeleton key={i} className="h-40 w-full rounded-lg" />
+                      <NewsCardSkeleton key={i} />
                     ))
                   ) : (
                     sportsArticles.slice(0, 2).map((article) => (
@@ -207,7 +219,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {entertainmentLoading ? (
                     [...Array(6)].map((_, i) => (
-                      <Skeleton key={i} className="h-32 w-full rounded-lg" />
+                      <EntertainmentCardSkeleton key={i} />
                     ))
                   ) : (
                     entertainmentArticles.map((article) => (
@@ -233,14 +245,18 @@ export default function Dashboard() {
             
             {/* Right Sidebar - Trending Topics */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg p-6 sticky top-20">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Trending Topics</h3>
-                <div className="space-y-4">
-                  {sidebarArticles.map((article) => (
-                    <NewsCard key={article.id} article={article} variant="small" />
-                  ))}
+              {trendingLoading ? (
+                <SidebarSkeleton />
+              ) : (
+                <div className="bg-white rounded-lg p-6 sticky top-20">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Trending Topics</h3>
+                  <div className="space-y-4">
+                    {sidebarArticles.map((article) => (
+                      <NewsCard key={article.id} article={article} variant="small" />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ArticleDetailSkeleton } from "@/components/ui/news-skeleton";
 import { newsApi } from "@/lib/news-api";
 import { Eye, MessageCircle, Share, Bookmark, ChevronLeft, CheckCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -91,20 +91,7 @@ export default function ArticleDetail() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header onSearch={handleSearch} searchQuery={searchQuery} />
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <Skeleton className="h-8 w-20 mb-4" />
-              <Skeleton className="h-80 w-full mb-6" />
-              <Skeleton className="h-8 w-3/4 mb-4" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-            <div className="lg:col-span-1">
-              <Skeleton className="h-64 w-full" />
-            </div>
-          </div>
-        </div>
+        <ArticleDetailSkeleton />
       </div>
     );
   }
