@@ -145,30 +145,6 @@ function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'medias
   }
 }
 
-// --- TRUSTED SOURCES WHITELIST ---
-// Anti-hoax mission: Only articles from these vetted sources will be shown
-const TRUSTED_SOURCES = [
-  // International Sources
-  'Reuters',
-  'Associated Press',
-  'BBC News',
-  'The Guardian',
-  'The New York Times',
-  'CNN',
-  'CNBC',
-  // Indonesian Sources
-  'CNN Indonesia',
-  'CNBC Indonesia',
-  'Detik News',
-  'Detik',
-  'Kompas.com',
-  'Kompas',
-  'Tempo.co',
-  'Tempo',
-  'Antara News',
-  'Antara'
-];
-
 // Background refresh function - fetches real API data and saves to MemStorage
 async function refreshNewsInBackground(category?: string) {
   const cacheKey = getCacheKey(category);
@@ -322,34 +298,27 @@ async function refreshNewsInBackground(category?: string) {
       try {
         const normalized = normalizeArticle(rawArticle, rawArticle.apiSource, category);
         if (normalized && normalized.url && !seenUrls.has(normalized.url)) {
-          // Apply whitelist filter
-          const isFromTrustedSource = TRUSTED_SOURCES.some(trustedSource =>
-            normalized.source && normalized.source.toLowerCase().includes(trustedSource.toLowerCase())
-          );
-
-          if (isFromTrustedSource) {
-            // Save to MemStorage
-            try {
-              const savedArticle = await storage.createNewsArticle({
-                title: normalized.title,
-                description: normalized.description,
-                content: normalized.content,
-                url: normalized.url,
-                imageUrl: normalized.imageUrl,
-                publishedAt: normalized.publishedAt,
-                source: normalized.source,
-                author: normalized.author,
-                category: normalized.category,
-                isVerified: normalized.isVerified,
-                metadata: normalized.metadata
-              });
-              processedArticles.push(savedArticle);
-              seenUrls.add(normalized.url);
-            } catch (storageError) {
-              // If storage fails (duplicate), still add to cache
-              processedArticles.push(normalized);
-              seenUrls.add(normalized.url);
-            }
+          // Save to MemStorage
+          try {
+            const savedArticle = await storage.createNewsArticle({
+              title: normalized.title,
+              description: normalized.description,
+              content: normalized.content,
+              url: normalized.url,
+              imageUrl: normalized.imageUrl,
+              publishedAt: normalized.publishedAt,
+              source: normalized.source,
+              author: normalized.author,
+              category: normalized.category,
+              isVerified: normalized.isVerified,
+              metadata: normalized.metadata
+            });
+            processedArticles.push(savedArticle);
+            seenUrls.add(normalized.url);
+          } catch (storageError) {
+            // If storage fails (duplicate), still add to cache
+            processedArticles.push(normalized);
+            seenUrls.add(normalized.url);
           }
         }
       } catch (error) {
