@@ -145,30 +145,6 @@ function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'medias
   }
 }
 
-// --- TRUSTED SOURCES WHITELIST ---
-// Anti-hoax mission: Only articles from these vetted sources will be shown
-const TRUSTED_SOURCES = [
-  // International Sources
-  'Reuters',
-  'Associated Press',
-  'BBC News',
-  'The Guardian',
-  'The New York Times',
-  'CNN',
-  'CNBC',
-  // Indonesian Sources
-  'CNN Indonesia',
-  'CNBC Indonesia',
-  'Detik News',
-  'Detik',
-  'Kompas.com',
-  'Kompas',
-  'Tempo.co',
-  'Tempo',
-  'Antara News',
-  'Antara'
-];
-
 // Background refresh function - fetches real API data and saves to MemStorage
 async function refreshNewsInBackground(category?: string) {
   const cacheKey = getCacheKey(category);
@@ -322,34 +298,27 @@ async function refreshNewsInBackground(category?: string) {
       try {
         const normalized = normalizeArticle(rawArticle, rawArticle.apiSource, category);
         if (normalized && normalized.url && !seenUrls.has(normalized.url)) {
-          // Apply whitelist filter
-          const isFromTrustedSource = TRUSTED_SOURCES.some(trustedSource =>
-            normalized.source && normalized.source.toLowerCase().includes(trustedSource.toLowerCase())
-          );
-
-          if (isFromTrustedSource) {
-            // Save to MemStorage
-            try {
-              const savedArticle = await storage.createNewsArticle({
-                title: normalized.title,
-                description: normalized.description,
-                content: normalized.content,
-                url: normalized.url,
-                imageUrl: normalized.imageUrl,
-                publishedAt: normalized.publishedAt,
-                source: normalized.source,
-                author: normalized.author,
-                category: normalized.category,
-                isVerified: normalized.isVerified,
-                metadata: normalized.metadata
-              });
-              processedArticles.push(savedArticle);
-              seenUrls.add(normalized.url);
-            } catch (storageError) {
-              // If storage fails (duplicate), still add to cache
-              processedArticles.push(normalized);
-              seenUrls.add(normalized.url);
-            }
+          // Save to MemStorage
+          try {
+            const savedArticle = await storage.createNewsArticle({
+              title: normalized.title,
+              description: normalized.description,
+              content: normalized.content,
+              url: normalized.url,
+              imageUrl: normalized.imageUrl,
+              publishedAt: normalized.publishedAt,
+              source: normalized.source,
+              author: normalized.author,
+              category: normalized.category,
+              isVerified: normalized.isVerified,
+              metadata: normalized.metadata
+            });
+            processedArticles.push(savedArticle);
+            seenUrls.add(normalized.url);
+          } catch (storageError) {
+            // If storage fails (duplicate), still add to cache
+            processedArticles.push(normalized);
+            seenUrls.add(normalized.url);
           }
         }
       } catch (error) {
@@ -375,63 +344,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get news articles - Enhanced with real API data, category filtering, and caching
   app.get("/api/news", async (req, res) => {
     try {
-      const category = req.query.category as string;
-      const categories = req.query.categories as string; // Support multiple categories
+      const singleCategory = req.query.category as string;
+      const multipleCategories = req.query.categories as string;
       const timeFilter = req.query.timeFilter as string;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const paginated = req.query.paginated === 'true';
 
-      console.log(`📥 Request: category=${category}, categories=${categories}, timeFilter=${timeFilter}`);
+      console.log(`📥 Request: category=${singleCategory}, categories=${multipleCategories}, timeFilter=${timeFilter}`);
 
-      const cacheKey = getCacheKey(category);
-      const cacheEntry = getCacheEntry(cacheKey);
-      const now = Date.now();
-
-      // Check if we need to refresh cache
-      const cacheExpired = now - cacheEntry.timestamp > CACHE_DURATION;
-      const hasNoData = cacheEntry.data.length === 0;
-
-      if ((cacheExpired || hasNoData) && !cacheEntry.isLoading) {
-        console.log(`🔄 Cache ${cacheExpired ? 'expired' : 'empty'} for ${cacheKey}, triggering refresh...`);
-        refreshNewsInBackground(category);
-      }
-
-      // Get articles from cache or MemStorage
       let articles: NewsArticle[] = [];
+      let isLoading = false;
 
-      if (cacheEntry.data.length > 0) {
-        console.log(`📦 Serving from cache: ${cacheEntry.data.length} articles for ${cacheKey}`);
-        articles = [...cacheEntry.data];
-      } else {
-        // Fallback to MemStorage
-        console.log(`💾 Fallback to MemStorage for ${cacheKey}`);
-        try {
-          const storageParams = category ? { category } : {};
-          articles = await storage.getNewsArticles(storageParams);
-          console.log(`💾 MemStorage returned: ${articles.length} articles`);
-        } catch (error) {
-          console.error('MemStorage failed:', error);
-          articles = [];
+      // Logic for handling multiple categories
+      if (multipleCategories) {
+        const categoryList = multipleCategories.split(',').map(c => c.trim().toLowerCase());
+        const seenUrls = new Set<string>();
+
+        for (const cat of categoryList) {
+          const cacheKey = getCacheKey(cat);
+          const cacheEntry = getCacheEntry(cacheKey);
+          const now = Date.now();
+          const cacheExpired = now - cacheEntry.timestamp > CACHE_DURATION;
+          const hasNoData = cacheEntry.data.length === 0;
+
+          if ((cacheExpired || hasNoData) && !cacheEntry.isLoading) {
+            await refreshNewsInBackground(cat);
+          }
+
+          if(cacheEntry.isLoading) isLoading = true;
+
+          const updatedCacheEntry = getCacheEntry(cacheKey);
+          for (const article of updatedCacheEntry.data) {
+            if (!seenUrls.has(article.url)) {
+              articles.push(article);
+              seenUrls.add(article.url);
+            }
+          }
+        }
+      } else { // Fallback to original logic for single category or general
+        const cacheKey = getCacheKey(singleCategory);
+        const cacheEntry = getCacheEntry(cacheKey);
+        const now = Date.now();
+        const cacheExpired = now - cacheEntry.timestamp > CACHE_DURATION;
+        const hasNoData = cacheEntry.data.length === 0;
+
+        if ((cacheExpired || hasNoData) && !cacheEntry.isLoading) {
+          await refreshNewsInBackground(singleCategory);
+        }
+
+        if(cacheEntry.isLoading) isLoading = true;
+
+        const updatedCacheEntry = getCacheEntry(cacheKey);
+        if (updatedCacheEntry.data.length > 0) {
+          articles = [...updatedCacheEntry.data];
+        } else {
+          try {
+            const storageParams = singleCategory ? { category: singleCategory } : {};
+            articles = await storage.getNewsArticles(storageParams);
+          } catch (error) {
+            console.error('MemStorage failed:', error);
+            articles = [];
+          }
         }
       }
 
-      // Apply category filtering (support multiple categories)
-      if (categories) {
-        const categoryList = categories.split(',').map(c => c.trim().toLowerCase());
+      // This filtering is now partly redundant but ensures strict filtering for combined results
+      if (multipleCategories) {
+        const categoryList = multipleCategories.split(',').map(c => c.trim().toLowerCase());
+        if (categoryList.length > 0) {
+          articles = articles.filter(article =>
+            categoryList.some(cat =>
+              article.category.toLowerCase() === cat ||
+              article.metadata?.tags?.some(tag => tag.toLowerCase().includes(cat))
+            )
+          );
+        }
+      } else if (singleCategory && singleCategory !== 'general') {
         articles = articles.filter(article =>
-          categoryList.some(cat =>
-            article.category.toLowerCase() === cat ||
-            article.metadata?.tags?.some(tag => tag.toLowerCase().includes(cat))
-          )
+          article.category.toLowerCase() === singleCategory.toLowerCase() ||
+          article.metadata?.tags?.some(tag => tag.toLowerCase().includes(singleCategory.toLowerCase()))
         );
-        console.log(`🏷️ Filtered to ${articles.length} articles for categories: ${categoryList.join(', ')}`);
-      } else if (category && category !== 'general') {
-        articles = articles.filter(article =>
-          article.category.toLowerCase() === category.toLowerCase() ||
-          article.metadata?.tags?.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-        );
-        console.log(`🏷️ Filtered to ${articles.length} articles for category: ${category}`);
       }
 
       // Apply time filtering

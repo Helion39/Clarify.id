@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import clsx from "clsx";
 import { Header } from "@/components/layout/header";
 import { EnhancedSidebar } from "@/components/layout/enhanced-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewsCardSkeleton, EntertainmentCardSkeleton, SidebarSkeleton } from "@/components/ui/news-skeleton";
@@ -10,6 +12,7 @@ import { newsApi } from "@/lib/news-api";
 import { Eye, Clock, ChevronRight, ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { NewsArticle } from "@shared/schema";
+import { CategoryPlaceholder } from "@/components/ui/category-placeholder";
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -18,7 +21,7 @@ interface NewsCardProps {
 
 function NewsCard({ article, variant = "medium" }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true });
-  
+
   const getCategoryColor = (category: string) => {
     const colors = {
       technologies: "bg-blue-600 text-white",
@@ -30,59 +33,56 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
     return colors[category as keyof typeof colors] || "bg-gray-600 text-white";
   };
 
-  if (variant === "large") {
-    return (
-      <Link href={`/article/${article.id}`}>
-        <article className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-          {article.imageUrl && (
-            <div className="relative">
-              <img 
-                src={article.imageUrl} 
-                alt={article.title}
-                className="w-full h-64 object-cover"
-              />
-              <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
-                  {article.category}
-                </Badge>
-              </div>
-            </div>
-          )}
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-3">
-              {article.title}
-            </h2>
-            <p className="text-gray-600 mb-4 line-clamp-2">
-              {article.description}
-            </p>
-            <div className="flex items-center text-sm text-gray-500">
-              <span className="font-medium">{article.source}</span>
-              <span className="mx-2">•</span>
-              <span>{timeAgo}</span>
-            </div>
-          </div>
-        </article>
-      </Link>
-    );
-  }
+  const cardClasses = {
+    large: "col-span-4 row-span-2",
+    medium: "col-span-2",
+    small: "col-span-1",
+  };
+
+  const imageClasses = {
+    large: "h-full",
+    medium: "h-48",
+    small: "h-32",
+  };
+
+  const titleClasses = {
+    large: "text-4xl font-extrabold",
+    medium: "text-xl font-bold",
+    small: "text-md font-semibold",
+  };
+
+  const descriptionClasses = {
+    large: "text-lg mt-4",
+    medium: "text-sm mt-2",
+    small: "hidden",
+  };
 
   return (
-    <Link href={`/article/${article.id}`}>
-      <article className="flex space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
-        {article.imageUrl && (
+    <Link href={`/article/${article.id}`} className={`${cardClasses[variant]}`}>
+      <article className="relative w-full h-full rounded-lg overflow-hidden cursor-pointer group">
+        {article.imageUrl ? (
           <img 
             src={article.imageUrl} 
             alt={article.title}
-            className="w-20 h-16 object-cover rounded flex-shrink-0"
+            className={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${imageClasses[variant]}`}
           />
+        ) : (
+          <CategoryPlaceholder categoryName={article.category} className={`w-full ${imageClasses[variant]}`} />
         )}
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 p-6">
+          <Badge className={`${getCategoryColor(article.category)} mb-2`}>
+            {article.category}
+          </Badge>
+          <h2 className={`text-white line-clamp-3 ${titleClasses[variant]}`}>
             {article.title}
-          </h3>
-          <div className="flex items-center text-xs text-gray-500">
+          </h2>
+          <p className={`text-gray-300 line-clamp-2 ${descriptionClasses[variant]}`}>
+            {article.description}
+          </p>
+          <div className="flex items-center text-sm text-gray-400 mt-4">
             <span className="font-medium">{article.source}</span>
-            <span className="mx-1">•</span>
+            <span className="mx-2">•</span>
             <span>{timeAgo}</span>
           </div>
         </div>
@@ -93,50 +93,61 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("trending");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTimeFilter, setActiveTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['/api/categories'],
+    queryKey: ["/api/categories"],
     queryFn: () => newsApi.getCategories(),
   });
 
-  // Use selected categories for filtering, fallback to default categories if none selected
-  const effectiveCategories = selectedCategories.length > 0 ? selectedCategories : ['technologies'];
-  const categoriesParam = effectiveCategories.join(',');
+  // When no categories are selected, fetch a default set for the "Trending" view.
+  const categoriesParam = selectedCategories.length > 0 ? selectedCategories.join(',') : 'technologies,business,sports';
 
-  const { data: trendingArticles = [], isLoading: trendingLoading } = useQuery({
-    queryKey: ['/api/news', { categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ categories: categoriesParam, limit: 6, timeFilter: activeTimeFilter }),
+  const { data: articles = [], isLoading: articlesLoading } = useQuery({
+    queryKey: [
+      "/api/news",
+      { categories: categoriesParam, limit: 20, timeFilter: activeTimeFilter },
+    ],
+    queryFn: () =>
+      newsApi.getNews({
+        categories: categoriesParam,
+        limit: 20,
+        timeFilter: activeTimeFilter,
+      }),
   });
 
-  const { data: sportsArticles = [], isLoading: sportsLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'sports', limit: 4, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ category: 'sports', limit: 4, timeFilter: activeTimeFilter }),
+  const trendingArticle = articles.length > 0 ? articles[0] : null;
+
+  const { data: relatedArticles = [] } = useQuery({
+    queryKey: [
+      "/api/news",
+      { category: trendingArticle?.category, limit: 2, timeFilter: activeTimeFilter },
+    ],
+    queryFn: () =>
+      newsApi.getNews({
+        category: trendingArticle!.category,
+        limit: 2,
+        timeFilter: activeTimeFilter,
+      }),
+    enabled: !!trendingArticle,
   });
 
-  const { data: entertainmentArticles = [], isLoading: entertainmentLoading } = useQuery({
-    queryKey: ['/api/news', { category: 'games', limit: 6, timeFilter: activeTimeFilter }],
-    queryFn: () => newsApi.getNews({ category: 'games', limit: 6, timeFilter: activeTimeFilter }),
-  });
+  const latestArticles = articles.slice(1, 5);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setActiveCategory(category);
-    setCurrentPage(1);
+    // Maybe reset pagination here if you implement search filtering
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
-    setSelectedCategories(prev => {
+    setSelectedCategories((prev) => {
       if (checked) {
         return [...prev, category];
       } else {
-        return prev.filter(cat => cat !== category);
+        return prev.filter((cat) => cat !== category);
       }
     });
     setCurrentPage(1);
@@ -147,137 +158,64 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  const featuredArticle = trendingArticles[0];
-  const sidebarArticles = trendingArticles.slice(1, 6);
+  const handleSidebarToggle = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onSearch={handleSearch} searchQuery={searchQuery} />
-      
+      <Header
+        onSearch={handleSearch}
+        searchQuery={searchQuery}
+        onSidebarToggle={handleSidebarToggle}
+      />
+
       <div className="flex">
-        <EnhancedSidebar 
+        <EnhancedSidebar
+          isOpen={isSidebarOpen}
+          onToggle={handleSidebarToggle}
           categories={categories}
-          activeCategory={activeCategory}
           selectedCategories={selectedCategories}
           activeTimeFilter={activeTimeFilter}
-          onCategoryChange={handleCategoryChange}
           onCategoryToggle={handleCategoryToggle}
           onTimeFilterChange={handleTimeFilterChange}
         />
-        
-        <div className="flex-1 max-w-6xl mx-auto px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Trending News Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Trending News</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {trendingLoading ? (
-                    <>
-                      <div className="md:col-span-2">
-                        <NewsCardSkeleton variant="large" />
-                      </div>
-                      {[...Array(2)].map((_, i) => (
-                        <NewsCardSkeleton key={i} />
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      {featuredArticle && (
-                        <div className="md:col-span-2">
-                          <NewsCard article={featuredArticle} variant="large" />
-                        </div>
-                      )}
-                      {trendingArticles.slice(1, 3).map((article) => (
-                        <NewsCard key={article.id} article={article} />
-                      ))}
-                    </>
-                  )}
-                </div>
-              </section>
 
-              {/* Sport Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Sport</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {sportsLoading ? (
-                    [...Array(2)].map((_, i) => (
-                      <NewsCardSkeleton key={i} />
-                    ))
-                  ) : (
-                    sportsArticles.slice(0, 2).map((article) => (
-                      <NewsCard key={article.id} article={article} />
-                    ))
-                  )}
-                </div>
-              </section>
-
-              {/* Entertainment Section */}
-              <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Entertainments</h2>
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View all <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {entertainmentLoading ? (
-                    [...Array(6)].map((_, i) => (
-                      <EntertainmentCardSkeleton key={i} />
-                    ))
-                  ) : (
-                    entertainmentArticles.map((article) => (
-                      <Link key={article.id} href={`/article/${article.id}`}>
-                        <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                          {article.imageUrl && (
-                            <img 
-                              src={article.imageUrl} 
-                              alt={article.title}
-                              className="w-full h-24 object-cover rounded-lg mb-2"
-                            />
-                          )}
-                          <h3 className="text-xs font-medium text-gray-900 line-clamp-2">
-                            {article.title.substring(0, 50)}...
-                          </h3>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </section>
+        <main
+          className={clsx(
+            "flex-1 max-w-full mx-auto px-6 py-6 transition-all duration-400 ease-in-out",
+            {
+              "md:ml-64": isSidebarOpen,
+            }
+          )}
+        >
+          {articlesLoading ? (
+            <div className="grid grid-cols-4 grid-rows-3 gap-6 h-[calc(100vh-100px)]">
+              <div className="col-span-4 row-span-2"><NewsCardSkeleton variant="large" /></div>
+              <div className="col-span-2"><NewsCardSkeleton variant="medium" /></div>
+              <div className="col-span-2"><NewsCardSkeleton variant="medium" /></div>
+              <div className="col-span-1"><NewsCardSkeleton variant="small" /></div>
+              <div className="col-span-1"><NewsCardSkeleton variant="small" /></div>
+              <div className="col-span-1"><NewsCardSkeleton variant="small" /></div>
+              <div className="col-span-1"><NewsCardSkeleton variant="small" /></div>
             </div>
-            
-            {/* Right Sidebar - Trending Topics */}
-            <div className="lg:col-span-1">
-              {trendingLoading ? (
-                <SidebarSkeleton />
-              ) : (
-                <div className="bg-white rounded-lg p-6 sticky top-20">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Trending Topics</h3>
-                  <div className="space-y-4">
-                    {sidebarArticles.map((article) => (
-                      <NewsCard key={article.id} article={article} variant="small" />
-                    ))}
-                  </div>
-                </div>
-              )}
+          ) : trendingArticle ? (
+            <div className="grid grid-cols-4 grid-rows-3 gap-6 h-[calc(100vh-100px)]">
+              <NewsCard article={trendingArticle} variant="large" />
+              {relatedArticles.map((article) => (
+                <NewsCard key={article.id} article={article} variant="medium" />
+              ))}
+              {latestArticles.map((article) => (
+                <NewsCard key={article.id} article={article} variant="small" />
+              ))}
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold text-gray-700">No articles found.</h2>
+              <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
