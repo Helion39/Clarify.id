@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, Bell, Home, Menu, Sun, Moon, Bookmark } from "lucide-react";
+import { Search, Bell, Home, Menu, Sun, Moon, Bookmark, Monitor } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,9 +27,14 @@ export function Header({ onSearch, searchQuery, onSidebarToggle }: HeaderProps) 
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center space-x-4">
+            {/* Sidebar Toggle - Visible on desktop */}
+            <Button variant="ghost" size="icon" className="hidden md:block text-gray-600 hover:text-gray-900" onClick={onSidebarToggle}>
+              <Menu className="h-6 w-6" />
+            </Button>
+
             {/* Sidebar Toggle - Visible on mobile */}
             <Button variant="ghost" size="icon" className="md:hidden text-gray-600 hover:text-gray-900" onClick={onSidebarToggle}>
               <Menu className="h-6 w-6" />
@@ -57,12 +68,29 @@ export function Header({ onSearch, searchQuery, onSidebarToggle }: HeaderProps) 
               />
             </form>
 
-            {/* Theme Toggle Placeholder */}
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+            {/* Theme Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
+                  <Sun className="h-5 w-5" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Sun className="mr-2 h-4 w-4" />
+                  <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Moon className="mr-2 h-4 w-4" />
+                  <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Monitor className="mr-2 h-4 w-4" />
+                  <span>System</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Bookmark */}
             <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
