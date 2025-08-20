@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { gsap } from "gsap";
+import { useState, useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,15 +61,16 @@ export function EnhancedSidebar({
   const isMobile = useIsMobile();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (sidebarRef.current) {
+  useGSAP(
+    () => {
       gsap.to(sidebarRef.current, {
-        x: isOpen ? 0 : '-100%',
+        x: isOpen ? 0 : "-100%",
         duration: 0.4,
-        ease: 'power3.inOut',
+        ease: "power3.inOut",
       });
-    }
-  }, [isOpen]);
+    },
+    { dependencies: [isOpen], scope: sidebarRef }
+  );
 
   // On mobile, the sidebar is only rendered when it's open.
   // On desktop, it's part of the layout.
