@@ -230,7 +230,7 @@ export default function Dashboard() {
               <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
             </div>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );
