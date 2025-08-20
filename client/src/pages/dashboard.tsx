@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import clsx from "clsx";
 import { Header } from "@/components/layout/header";
 import { EnhancedSidebar } from "@/components/layout/enhanced-sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -176,7 +177,14 @@ export default function Dashboard() {
           onTimeFilterChange={handleTimeFilterChange}
         />
 
-        <div className="flex-1 max-w-7xl mx-auto px-6 py-6">
+        <main
+          className={clsx(
+            "flex-1 max-w-7xl mx-auto px-6 py-6 transition-all duration-400 ease-in-out",
+            {
+              "md:ml-64": isSidebarOpen,
+            }
+          )}
+        >
           {articlesLoading ? (
             // Skeleton for the new layout
             <div className="space-y-8">
