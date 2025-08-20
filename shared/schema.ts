@@ -66,7 +66,6 @@ export const searchNewsSchema = z.object({
 export type NewsArticle = typeof newsArticles.$inferSelect;
 export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
 export type Category = typeof categories.$inferSelect;
-export type CategoryWithCount = Category & { count: number };
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Source = typeof sources.$inferSelect;
 export type InsertSource = z.infer<typeof insertSourceSchema>;

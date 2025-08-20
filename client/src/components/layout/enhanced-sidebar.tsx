@@ -28,12 +28,12 @@ import {
   Sun,
 } from "lucide-react";
 
-import type { CategoryWithCount } from "@shared/schema";
+import type { Category } from "@shared/schema";
 
 interface EnhancedSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  categories: CategoryWithCount[];
+  categories: Category[];
   selectedCategories: string[];
   activeTimeFilter: string;
   onCategoryToggle: (category: string, checked: boolean) => void;
@@ -188,8 +188,7 @@ export function EnhancedSidebar({
                         }`}
                       >
                         <IconComponent className="h-4 w-4" />
-                        <span className="capitalize flex-1">{category.name}</span>
-                        <span className="text-xs font-medium text-gray-500">{category.count}</span>
+                        <span className="capitalize">{category.name}</span>
                       </label>
                       <Checkbox
                         id={`category-${category.slug}`}

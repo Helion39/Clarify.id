@@ -1,4 +1,4 @@
-import { type NewsArticle, type InsertNewsArticle, type Category, type InsertCategory, type Source, type InsertSource, type SearchNewsParams, type CategoryWithCount } from "@shared/schema";
+import { type NewsArticle, type InsertNewsArticle, type Category, type InsertCategory, type Source, type InsertSource, type SearchNewsParams } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -10,7 +10,7 @@ export interface IStorage {
   deleteNewsArticle(id: string): Promise<boolean>;
   
   // Categories
-  getCategories(): Promise<CategoryWithCount[]>;
+  getCategories(): Promise<Category[]>;
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   
@@ -147,21 +147,8 @@ export class MemStorage implements IStorage {
     return this.articles.delete(id);
   }
 
-  async getCategories(): Promise<CategoryWithCount[]> {
-    const allArticles = Array.from(this.articles.values());
-    const categoryCounts = new Map<string, number>();
-
-    for (const article of allArticles) {
-      const slug = article.category.toLowerCase();
-      categoryCounts.set(slug, (categoryCounts.get(slug) || 0) + 1);
-    }
-
-    const categories = Array.from(this.categories.values()).filter(cat => cat.isActive);
-
-    return categories.map(category => ({
-      ...category,
-      count: categoryCounts.get(category.slug) || 0,
-    }));
+  async getCategories(): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter(cat => cat.isActive);
   }
 
   async getCategoryBySlug(slug: string): Promise<Category | undefined> {
