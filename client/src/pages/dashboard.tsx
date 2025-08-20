@@ -6,7 +6,7 @@ import { EnhancedSidebar } from '@/components/layout/enhanced-sidebar';
 import { TrendingSidebar } from '@/components/news/trending-sidebar';
 import { FeaturedArticle } from '@/components/news/featured-article';
 import { NewsCard } from '@/components/news/news-card';
-import { NewsSkeleton } from '@/components/ui/news-skeleton';
+import { NewsCardSkeleton } from '@/components/ui/news-skeleton';
 import { newsApi } from '@/lib/news-api';
 import type { NewsArticle } from '@shared/schema';
 import { useLocation } from 'wouter';
@@ -59,7 +59,19 @@ export default function Dashboard() {
 
       <main className="col-span-7 py-8">
         {isLoading ? (
-          <NewsSkeleton />
+          <div className="space-y-12">
+            <NewsCardSkeleton variant="large" />
+            <div className="grid grid-cols-2 gap-6">
+              <NewsCardSkeleton variant="medium" />
+              <NewsCardSkeleton variant="medium" />
+            </div>
+            <div className="grid grid-cols-4 gap-6">
+              <NewsCardSkeleton variant="small" />
+              <NewsCardSkeleton variant="small" />
+              <NewsCardSkeleton variant="small" />
+              <NewsCardSkeleton variant="small" />
+            </div>
+          </div>
         ) : (
           <div className="space-y-12">
 
