@@ -14,7 +14,7 @@ import { CategoryPlaceholder } from "@/components/ui/category-placeholder";
 
 interface NewsCardProps {
   article: NewsArticle;
-  variant?: "large" | "medium" | "small";
+  variant?: "large" | "medium-large" | "medium" | "small";
 }
 
 function NewsCard({ article, variant = "medium" }: NewsCardProps) {
@@ -66,6 +66,54 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
               {article.description}
             </p>
             <div className="flex items-center text-sm text-gray-500">
+              <span className="font-medium flex items-center">
+                {article.source}
+                {article.isVerified && <CheckCircle2 className="w-4 h-4 ml-1 text-blue-500" />}
+              </span>
+              <span className="mx-2">•</span>
+              <span>{timeAgo}</span>
+            </div>
+          </div>
+        </article>
+      </Link>
+    );
+  }
+
+  if (variant === "medium-large") {
+    return (
+      <Link href={`/article/${article.id}`}>
+        <article className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+          {article.imageUrl ? (
+            <div className="relative">
+              <img
+                src={article.imageUrl}
+                alt={article.title}
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-4 left-4">
+                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                  {article.category}
+                </Badge>
+              </div>
+            </div>
+          ) : (
+            <div className="relative">
+              <CategoryPlaceholder categoryName={article.category} className="w-full h-48" />
+              <div className="absolute top-4 left-4">
+                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                  {article.category}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <div className="p-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-3">
+              {article.title}
+            </h2>
+            <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
+              {article.description}
+            </p>
+            <div className="flex items-center text-xs text-gray-500">
               <span className="font-medium flex items-center">
                 {article.source}
                 {article.isVerified && <CheckCircle2 className="w-4 h-4 ml-1 text-blue-500" />}
@@ -221,7 +269,7 @@ export default function Dashboard() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {otherArticles.map((article) => (
-                          <NewsCard key={article.id} article={article} />
+                          <NewsCard key={article.id} article={article} variant="medium-large" />
                         ))}
                       </div>
                     </section>
@@ -240,7 +288,7 @@ export default function Dashboard() {
               {articlesLoading ? (
                 <SidebarSkeleton />
               ) : (
-                <div className="bg-white rounded-lg p-6 sticky top-20">
+                <div className="bg-white rounded-lg p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">
                     Popular Topics
                   </h3>
