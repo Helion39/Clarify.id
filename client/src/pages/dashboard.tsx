@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewsCardSkeleton, EntertainmentCardSkeleton, SidebarSkeleton } from "@/components/ui/news-skeleton";
 import { newsApi } from "@/lib/news-api";
-import { Eye, Clock, ChevronRight, ChevronLeft } from "lucide-react";
+import { Eye, Clock, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { NewsArticle } from "@shared/schema";
 import { CategoryPlaceholder } from "@/components/ui/category-placeholder";
@@ -66,7 +66,10 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
               {article.description}
             </p>
             <div className="flex items-center text-sm text-gray-500">
-              <span className="font-medium">{article.source}</span>
+              <span className="font-medium flex items-center">
+                {article.source}
+                {article.isVerified && <CheckCircle2 className="w-4 h-4 ml-1 text-blue-500" />}
+              </span>
               <span className="mx-2">•</span>
               <span>{timeAgo}</span>
             </div>
@@ -93,7 +96,10 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
             {article.title}
           </h3>
           <div className="flex items-center text-xs text-gray-500">
-            <span className="font-medium">{article.source}</span>
+            <span className="font-medium flex items-center">
+              {article.source}
+              {article.isVerified && <CheckCircle2 className="w-3 h-3 ml-1 text-blue-500" />}
+            </span>
             <span className="mx-1">•</span>
             <span>{timeAgo}</span>
           </div>
