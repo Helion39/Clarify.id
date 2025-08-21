@@ -208,9 +208,6 @@ export default function Dashboard() {
                           />
                         </div>
                       )}
-                      {trendingArticles.map((article) => (
-                        <NewsCard key={article.id} article={article} />
-                      ))}
                     </div>
                   </section>
 
