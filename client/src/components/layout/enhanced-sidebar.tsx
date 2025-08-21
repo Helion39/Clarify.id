@@ -55,6 +55,33 @@ export function EnhancedSidebar({
   return (
     <div className="w-64 bg-white border-r border-gray-200 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">
       <div className="p-4 space-y-6">
+        {/* Date Range Section */}
+        <div>
+          <div className="flex items-center space-x-2 mb-3">
+            <Calendar className="h-4 w-4 text-gray-600" />
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              DATE RANGE
+            </h2>
+          </div>
+          <div className="space-y-1">
+            {timeFilters.map((filter) => (
+              <button
+                key={filter.id}
+                className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                  activeTimeFilter === filter.value
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => onTimeFilterChange(filter.value)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
         {/* Categories Section */}
         <div>
           <button
@@ -132,33 +159,6 @@ export function EnhancedSidebar({
               })}
             </div>
           )}
-        </div>
-
-        <Separator />
-
-        {/* Date Range Section */}
-        <div>
-          <div className="flex items-center space-x-2 mb-3">
-            <Calendar className="h-4 w-4 text-gray-600" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              DATE RANGE
-            </h2>
-          </div>
-          <div className="space-y-1">
-            {timeFilters.map((filter) => (
-              <button
-                key={filter.id}
-                className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                  activeTimeFilter === filter.value
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => onTimeFilterChange(filter.value)}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>
