@@ -71,10 +71,20 @@ function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'medias
       }
     }
 
+    const sourceName =
+      apiSource === 'newsapi' ? article.source?.name :
+      apiSource === 'gnews' ? article.source?.name :
+      apiSource === 'mediastack' ? article.source :
+      'Unknown';
+
+    const isVerified = TRUSTED_SOURCES.some(trustedSource =>
+      sourceName && sourceName.toLowerCase().includes(trustedSource.toLowerCase())
+    );
+
     const baseArticle = {
       id: uuidv4(),
       category: articleCategory,
-      isVerified: true,
+      isVerified: isVerified,
       createdAt: new Date(),
     };
 
@@ -322,34 +332,26 @@ async function refreshNewsInBackground(category?: string) {
       try {
         const normalized = normalizeArticle(rawArticle, rawArticle.apiSource, category);
         if (normalized && normalized.url && !seenUrls.has(normalized.url)) {
-          // Apply whitelist filter
-          const isFromTrustedSource = TRUSTED_SOURCES.some(trustedSource =>
-            normalized.source && normalized.source.toLowerCase().includes(trustedSource.toLowerCase())
-          );
-
-          if (isFromTrustedSource) {
-            // Save to MemStorage
-            try {
-              const savedArticle = await storage.createNewsArticle({
-                title: normalized.title,
-                description: normalized.description,
-                content: normalized.content,
-                url: normalized.url,
-                imageUrl: normalized.imageUrl,
-                publishedAt: normalized.publishedAt,
-                source: normalized.source,
-                author: normalized.author,
-                category: normalized.category,
-                isVerified: normalized.isVerified,
-                metadata: normalized.metadata
-              });
-              processedArticles.push(savedArticle);
-              seenUrls.add(normalized.url);
-            } catch (storageError) {
-              // If storage fails (duplicate), still add to cache
-              processedArticles.push(normalized);
-              seenUrls.add(normalized.url);
-            }
+          try {
+            const savedArticle = await storage.createNewsArticle({
+              title: normalized.title,
+              description: normalized.description,
+              content: normalized.content,
+              url: normalized.url,
+              imageUrl: normalized.imageUrl,
+              publishedAt: normalized.publishedAt,
+              source: normalized.source,
+              author: normalized.author,
+              category: normalized.category,
+              isVerified: normalized.isVerified,
+              metadata: normalized.metadata
+            });
+            processedArticles.push(savedArticle);
+            seenUrls.add(normalized.url);
+          } catch (storageError) {
+            // If storage fails (duplicate), still add to cache
+            processedArticles.push(normalized);
+            seenUrls.add(normalized.url);
           }
         }
       } catch (error) {
