@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { searchNewsSchema, insertNewsArticleSchema, type NewsArticle } from "@shared/schema";
+import { searchNewsSchema, insertNewsArticleSchema, type NewsArticle, type SearchNewsParams } from "@shared/schema";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -431,7 +431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           articles = [...updatedCacheEntry.data];
         } else {
           try {
-            const storageParams = singleCategory ? { category: singleCategory } : {};
+            const storageParams: SearchNewsParams = {
+              ...(singleCategory ? { category: singleCategory } : {}),
+              limit,
+              offset: (page - 1) * limit,
+            };
             articles = await storage.getNewsArticles(storageParams);
           } catch (error) {
             console.error('MemStorage failed:', error);
@@ -500,8 +504,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalPages,
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
-          category: category || 'general',
-          isLoading: cacheEntry.isLoading
+          category: singleCategory || 'general',
+          isLoading: isLoading
         });
       } else {
         console.log(`📋 Returning ${articles.length} articles`);
@@ -510,7 +514,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("❌ Error in /api/news:", error);
-      res.status(500).json({ message: "Failed to fetch news articles", error: error.message });
+      if (error instanceof Error) {
+        res.status(500).json({ message: "Failed to fetch news articles", error: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to fetch news articles", error: "An unknown error occurred" });
+      }
     }
   });
 
@@ -549,7 +557,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(article);
     } catch (error) {
       console.error(`❌ Error fetching article ${req.params.id}:`, error);
-      res.status(500).json({ message: "Failed to fetch article", error: error.message });
+      if (error instanceof Error) {
+        res.status(500).json({ message: "Failed to fetch article", error: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to fetch article", error: "An unknown error occurred" });
+      }
     }
   });
 
@@ -628,7 +640,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("❌ Error refreshing news:", error);
-      res.status(500).json({ message: "Failed to refresh news", error: error.message });
+      if (error instanceof Error) {
+        res.status(500).json({ message: "Failed to refresh news", error: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to refresh news", error: "An unknown error occurred" });
+      }
     }
   });
 
