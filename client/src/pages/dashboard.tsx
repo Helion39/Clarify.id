@@ -114,8 +114,7 @@ export default function Dashboard() {
     queryFn: () => newsApi.getCategories(),
   });
 
-  // When no categories are selected, fetch a default set for the "Trending" view.
-  const categoriesParam = selectedCategories.length > 0 ? selectedCategories.join(',') : 'technologies,business,sports';
+  const categoriesParam = selectedCategories.join(',');
 
   const { data: articles = [], isLoading: articlesLoading } = useQuery({
     queryKey: [

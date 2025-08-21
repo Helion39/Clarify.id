@@ -129,6 +129,12 @@ export class MemStorage implements IStorage {
       ...insertArticle,
       id,
       createdAt: new Date(),
+      description: insertArticle.description ?? null,
+      content: insertArticle.content ?? null,
+      imageUrl: insertArticle.imageUrl ?? null,
+      author: insertArticle.author ?? null,
+      isVerified: insertArticle.isVerified ?? true,
+      metadata: insertArticle.metadata as any ?? null,
     };
     this.articles.set(id, article);
     return article;
@@ -138,7 +144,7 @@ export class MemStorage implements IStorage {
     const existing = this.articles.get(id);
     if (!existing) return undefined;
 
-    const updated = { ...existing, ...updateData };
+    const updated: NewsArticle = { ...existing, ...updateData, metadata: updateData.metadata as any ?? existing.metadata };
     this.articles.set(id, updated);
     return updated;
   }
@@ -157,7 +163,11 @@ export class MemStorage implements IStorage {
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = randomUUID();
-    const category: Category = { ...insertCategory, id };
+    const category: Category = {
+      ...insertCategory,
+      id,
+      isActive: insertCategory.isActive ?? true,
+    };
     this.categories.set(id, category);
     return category;
   }
@@ -172,7 +182,13 @@ export class MemStorage implements IStorage {
 
   async createSource(insertSource: InsertSource): Promise<Source> {
     const id = randomUUID();
-    const source: Source = { ...insertSource, id };
+    const source: Source = {
+      ...insertSource,
+      id,
+      isVerified: insertSource.isVerified ?? true,
+      apiKey: insertSource.apiKey ?? null,
+      trustRating: insertSource.trustRating ?? 'high',
+    };
     this.sources.set(id, source);
     return source;
   }

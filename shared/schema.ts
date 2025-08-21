@@ -20,6 +20,7 @@ export const newsArticles = pgTable("news_articles", {
     tags?: string[];
     priority?: 'high' | 'medium' | 'low';
     apiSource?: string;
+    originalUrl?: string;
   }>(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -30,14 +31,14 @@ export const categories = pgTable("categories", {
   slug: text("slug").notNull().unique(),
   icon: text("icon").notNull(),
   color: text("color").notNull(),
-  isActive: boolean("is_active").default(true),
+  isActive: boolean("is_active").default(true).notNull(),
 });
 
 export const sources = pgTable("sources", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
   domain: text("domain").notNull(),
-  isVerified: boolean("is_verified").default(true),
+  isVerified: boolean("is_verified").default(true).notNull(),
   trustRating: text("trust_rating").notNull().default('high'),
   apiKey: text("api_key"),
 });
