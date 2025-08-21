@@ -33,12 +33,10 @@ function getCacheEntry(cacheKey: string) {
 }
 
 // Enhanced normalize article function for different APIs
-function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'mediastack', categoryHint?: string): NewsArticle | null {
+function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'newsdata', categoryHint?: string): NewsArticle | null {
   try {
     // Skip articles with removed content or missing essential fields
-    if (!article.title || !article.url ||
-      article.title.includes('[Removed]') ||
-      article.title.toLowerCase().includes('removed')) {
+    if (!article.title || !article.url) {
       return null;
     }
 
@@ -74,7 +72,7 @@ function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'medias
     const sourceName =
       apiSource === 'newsapi' ? article.source?.name :
       apiSource === 'gnews' ? article.source?.name :
-      apiSource === 'mediastack' ? article.source :
+      apiSource === 'newsdata' ? article.source_id :
       'Unknown';
 
     const isVerified = TRUSTED_SOURCES.some(trustedSource =>
@@ -127,25 +125,24 @@ function normalizeArticle(article: any, apiSource: 'newsapi' | 'gnews' | 'medias
           }
         };
 
-      case 'mediastack':
+      case 'newsdata':
         return {
           ...baseArticle,
           title: article.title.trim(),
           description: article.description?.trim() || '',
-          content: article.description?.trim() || '',
-          url: article.url, // Keep original URL for external reference
-          imageUrl: article.image || null,
-          publishedAt: new Date(article.published_at),
-          source: cleanSourceName(article.source || 'Mediastack'),
-          author: article.author?.trim() || 'Unknown Author',
+          content: article.content?.trim() || '',
+          url: article.link,
+          imageUrl: article.image_url || null,
+          publishedAt: new Date(article.pubDate),
+          source: cleanSourceName(article.source_id || 'NewsData.io'),
+          author: article.creator?.join(', ') || 'Unknown Author',
           metadata: {
             priority: 'medium' as const,
             apiSource,
             tags: [articleCategory, 'news'],
-            originalUrl: article.url
+            originalUrl: article.link
           }
         };
-
       default:
         return null;
     }
@@ -192,12 +189,12 @@ async function refreshNewsInBackground(category?: string) {
   try {
     const newsApiKey = process.env.NEWSAPI_KEY || "";
     const gnewsApiKey = process.env.GNEWS_API_KEY || "";
-    const mediastackApiKey = process.env.MEDIASTACK_API_KEY || "";
+    const newsDataApiKey = process.env.NEWSDATA_API_KEY || "";
 
     console.log('🔑 API Keys status:', {
       newsApi: newsApiKey ? `✅ Present` : '❌ Missing',
       gnews: gnewsApiKey ? `✅ Present` : '❌ Missing',
-      mediastack: mediastackApiKey ? `✅ Present` : '❌ Missing'
+      newsData: newsDataApiKey ? `✅ Present` : '❌ Missing'
     });
 
     // Category-specific search queries
@@ -294,31 +291,30 @@ async function refreshNewsInBackground(category?: string) {
       }
     }
 
-    // Try Mediastack if we still need more
-    if (fetchedArticles.length < 30 && mediastackApiKey) {
+    if (fetchedArticles.length < 30 && newsDataApiKey) {
       try {
-        const mediastackUrl = `http://api.mediastack.com/v1/news?access_key=${mediastackApiKey}&keywords=${encodeURIComponent(searchQuery)}&limit=30`;
-        console.log(`📡 Calling Mediastack: ${mediastackUrl.replace(mediastackApiKey, 'API_KEY')}`);
+        const newsDataUrl = `https://newsdata.io/api/1/news?apikey=${newsDataApiKey}&q=${encodeURIComponent(searchQuery)}&language=en`;
+        console.log(`📡 Calling NewsData.io: ${newsDataUrl.replace(newsDataApiKey, 'API_KEY')}`);
 
-        const response = await fetch(mediastackUrl);
-        console.log(`📡 Mediastack Response: ${response.status} ${response.statusText}`);
+        const response = await fetch(newsDataUrl);
+        console.log(`📡 NewsData.io Response: ${response.status} ${response.statusText}`);
 
         if (!response.ok) {
-          throw new Error(`Mediastack HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`NewsData.io HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log(`📡 Mediastack Data:`, {
-          pagination: data.pagination,
-          dataCount: data.data?.length || 0
+        console.log(`📡 NewsData.io Data:`, {
+          totalResults: data.totalResults,
+          resultsCount: data.results?.length || 0
         });
 
-        if (data.data && data.data.length > 0) {
-          fetchedArticles.push(...data.data.map((a: any) => ({ ...a, apiSource: 'mediastack' })));
-          console.log(`✅ Mediastack: ${data.data.length} articles fetched`);
+        if (data.status === 'success' && data.results && data.results.length > 0) {
+          fetchedArticles.push(...data.results.map((a: any) => ({ ...a, apiSource: 'newsdata' })));
+          console.log(`✅ NewsData.io: ${data.results.length} articles fetched`);
         }
       } catch (error) {
-        console.error('❌ Mediastack failed:', error);
+        console.error('❌ NewsData.io failed:', error);
       }
     }
 
