@@ -50,7 +50,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
             </div>
           ) : (
             <div className="relative">
-              <CategoryPlaceholder categoryName={article.category} className="w-full h-64" />
+              <CategoryPlaceholder className="w-full h-64" />
               <div className="absolute top-4 left-4">
                 <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
                   {article.category}
@@ -89,7 +89,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
             className="w-20 h-16 object-cover rounded flex-shrink-0"
           />
         ) : (
-          <CategoryPlaceholder categoryName={article.category} className="w-20 h-16 rounded flex-shrink-0" />
+          <CategoryPlaceholder className="w-20 h-16 rounded flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
