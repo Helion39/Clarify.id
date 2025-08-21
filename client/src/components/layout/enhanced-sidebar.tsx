@@ -53,13 +53,13 @@ export function EnhancedSidebar({
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">
+    <div className="w-64 bg-card border-r sticky top-14 h-[calc(100vh-56px)] overflow-y-auto">
       <div className="p-4 space-y-6">
         {/* Date Range Section */}
         <div>
           <div className="flex items-center space-x-2 mb-3">
-            <Calendar className="h-4 w-4 text-gray-600" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
               DATE RANGE
             </h2>
           </div>
@@ -69,8 +69,8 @@ export function EnhancedSidebar({
                 key={filter.id}
                 className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                   activeTimeFilter === filter.value
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
                 onClick={() => onTimeFilterChange(filter.value)}
               >
@@ -86,18 +86,18 @@ export function EnhancedSidebar({
         <div>
           <button
             onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
-            className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 rounded-lg p-1 transition-colors"
+            className="flex items-center justify-between w-full mb-3 hover:bg-muted rounded-lg p-1 transition-colors"
           >
             <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-600" />
-              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
                 CATEGORIES
               </h2>
             </div>
             {isCategoryExpanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-600" />
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-gray-600" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
           
@@ -135,14 +135,14 @@ export function EnhancedSidebar({
                 return (
                   <div
                     key={category.id}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-gray-50 ${
-                      isSelected ? 'bg-blue-50 border border-blue-200' : ''
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-muted ${
+                      isSelected ? 'bg-primary/10 border border-primary/20' : ''
                     }`}
                   >
                     <label
                       htmlFor={`category-${category.slug}`}
                       className={`flex items-center space-x-2 text-sm cursor-pointer flex-1 ${
-                        isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                        isSelected ? 'text-primary font-medium' : 'text-muted-foreground'
                       }`}
                     >
                       <IconComponent className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function EnhancedSidebar({
                       id={`category-${category.slug}`}
                       checked={isSelected}
                       onCheckedChange={(checked) => onCategoryToggle(category.slug, checked as boolean)}
-                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                   </div>
                 );
