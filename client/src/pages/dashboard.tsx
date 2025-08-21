@@ -152,8 +152,8 @@ export default function Dashboard() {
   };
 
   const featuredArticle = articles[0];
-  const trendingArticles = articles.slice(1, 5);
-  const otherArticles = articles.slice(5);
+  const trendingArticles = articles.slice(1, 4);
+  const otherArticles = articles.slice(4);
   const sidebarArticles = articles.slice(0, 5); // Use top 5 articles for sidebar
 
   return (
