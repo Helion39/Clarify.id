@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/header";
 import { EnhancedSidebar } from "@/components/layout/enhanced-sidebar";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NewsCardSkeleton, EntertainmentCardSkeleton, SidebarSkeleton } from "@/components/ui/news-skeleton";
 import { newsApi } from "@/lib/news-api";
@@ -11,6 +11,8 @@ import { Eye, Clock, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-reac
 import { formatDistanceToNow } from "date-fns";
 import type { NewsArticle } from "@shared/schema";
 import { CategoryPlaceholder } from "@/components/ui/category-placeholder";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -20,21 +22,21 @@ interface NewsCardProps {
 function NewsCard({ article, variant = "medium" }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true });
   
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      technologies: "bg-blue-600 text-white",
-      politics: "bg-red-600 text-white",
-      business: "bg-yellow-600 text-white",
-      science: "bg-purple-600 text-white",
-      health: "bg-green-600 text-white",
+  const getCategoryVariant = (category: string): "info" | "destructive" | "secondary" | "default" => {
+    const variants = {
+      technologies: "info",
+      politics: "destructive",
+      business: "secondary",
+      science: "default",
+      health: "default",
     };
-    return colors[category as keyof typeof colors] || "bg-gray-600 text-white";
+    return variants[category as keyof typeof variants] || "default";
   };
 
   if (variant === "large") {
     return (
       <Link href={`/article/${article.id}`}>
-        <article className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+        <article className="bg-card rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
           {article.imageUrl ? (
             <div className="relative">
               <img 
@@ -43,7 +45,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
                 className="w-full h-64 object-cover"
               />
               <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                <Badge variant={getCategoryVariant(article.category)} className="px-3 py-1 text-sm font-medium uppercase tracking-wide">
                   {article.category}
                 </Badge>
               </div>
@@ -52,20 +54,20 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
             <div className="relative">
               <CategoryPlaceholder categoryName={article.category} className="w-full h-64" />
               <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                <Badge variant={getCategoryVariant(article.category)} className="px-3 py-1 text-sm font-medium uppercase tracking-wide">
                   {article.category}
                 </Badge>
               </div>
             </div>
           )}
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-3">
+            <h2 className="text-xl font-bold text-foreground mb-3 line-clamp-3">
               {article.title}
             </h2>
-            <p className="text-gray-600 mb-4 line-clamp-2">
+            <p className="text-muted-foreground mb-4 line-clamp-2">
               {article.description}
             </p>
-            <div className="flex items-center text-sm text-gray-500">
+            <div className="flex items-center text-sm text-muted-foreground">
               <span className="font-medium flex items-center">
                 {article.source}
                 {article.isVerified && <CheckCircle2 className="w-4 h-4 ml-1 text-blue-500" />}
@@ -82,7 +84,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
   if (variant === "medium-large") {
     return (
       <Link href={`/article/${article.id}`}>
-        <article className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+        <article className="bg-card rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
           {article.imageUrl ? (
             <div className="relative">
               <img
@@ -91,7 +93,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
                 className="w-full h-48 object-cover"
               />
               <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                <Badge variant={getCategoryVariant(article.category)} className="px-3 py-1 text-sm font-medium uppercase tracking-wide">
                   {article.category}
                 </Badge>
               </div>
@@ -100,20 +102,20 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
             <div className="relative">
               <CategoryPlaceholder categoryName={article.category} className="w-full h-48" />
               <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(article.category)} px-3 py-1 text-sm font-medium uppercase tracking-wide`}>
+                <Badge variant={getCategoryVariant(article.category)} className="px-3 py-1 text-sm font-medium uppercase tracking-wide">
                   {article.category}
                 </Badge>
               </div>
             </div>
           )}
           <div className="p-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-3">
+            <h2 className="text-lg font-bold text-foreground mb-2 line-clamp-3">
               {article.title}
             </h2>
-            <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
+            <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
               {article.description}
             </p>
-            <div className="flex items-center text-xs text-gray-500">
+            <div className="flex items-center text-xs text-muted-foreground">
               <span className="font-medium flex items-center">
                 {article.source}
                 {article.isVerified && <CheckCircle2 className="w-4 h-4 ml-1 text-blue-500" />}
@@ -129,7 +131,7 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
 
   return (
     <Link href={`/article/${article.id}`}>
-      <article className="flex space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+      <article className="flex space-x-3 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
         {article.imageUrl ? (
           <img 
             src={article.imageUrl} 
@@ -140,10 +142,10 @@ function NewsCard({ article, variant = "medium" }: NewsCardProps) {
           <CategoryPlaceholder categoryName={article.category} className="w-20 h-16 rounded flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 mb-1">
             {article.title}
           </h3>
-          <div className="flex items-center text-xs text-gray-500">
+          <div className="flex items-center text-xs text-muted-foreground">
             <span className="font-medium flex items-center">
               {article.source}
               {article.isVerified && <CheckCircle2 className="w-3 h-3 ml-1 text-blue-500" />}
@@ -162,6 +164,8 @@ export default function Dashboard() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTimeFilter, setActiveTimeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/categories"],
@@ -209,20 +213,36 @@ export default function Dashboard() {
   const otherArticles = articles.slice(4);
   const sidebarArticles = articles.slice(0, 5); // Use top 5 articles for sidebar
 
+  const sidebarContent = (
+    <EnhancedSidebar
+      categories={categories}
+      selectedCategories={selectedCategories}
+      activeTimeFilter={activeTimeFilter}
+      onCategoryToggle={handleCategoryToggle}
+      onTimeFilterChange={handleTimeFilterChange}
+    />
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header onSearch={handleSearch} searchQuery={searchQuery} />
+    <div className="min-h-screen bg-background">
+      <Header
+        onSearch={handleSearch}
+        searchQuery={searchQuery}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
 
       <div className="flex">
-        <EnhancedSidebar
-          categories={categories}
-          selectedCategories={selectedCategories}
-          activeTimeFilter={activeTimeFilter}
-          onCategoryToggle={handleCategoryToggle}
-          onTimeFilterChange={handleTimeFilterChange}
-        />
+        {isMobile ? (
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetContent side="left" className="p-0 w-64">
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+        ) : (
+          sidebarContent
+        )}
 
-        <div className="flex-1 max-w-6xl mx-auto px-6 py-6">
+        <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
@@ -241,7 +261,7 @@ export default function Dashboard() {
                   {/* Trending Section */}
                   <section>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-2xl font-bold text-foreground">
                         {selectedCategories.length > 0
                           ? "Top Stories"
                           : "Trending News"}
@@ -263,7 +283,7 @@ export default function Dashboard() {
                   {otherArticles.length > 0 && (
                     <section>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-2xl font-bold text-foreground">
                           More News
                         </h2>
                       </div>
@@ -277,8 +297,8 @@ export default function Dashboard() {
                 </>
               ) : (
                 <div className="text-center py-12">
-                  <h2 className="text-xl font-semibold text-gray-700">No articles found.</h2>
-                  <p className="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
+                  <h2 className="text-xl font-semibold text-foreground">No articles found.</h2>
+                  <p className="text-muted-foreground mt-2">Try adjusting your filters or check back later.</p>
                 </div>
               )}
             </div>
@@ -288,8 +308,8 @@ export default function Dashboard() {
               {articlesLoading ? (
                 <SidebarSkeleton />
               ) : (
-                <div className="bg-white rounded-lg p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <div className="bg-card rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
                     Popular Topics
                   </h3>
                   <div className="space-y-4">
